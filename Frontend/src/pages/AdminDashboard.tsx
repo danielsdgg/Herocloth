@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AxiosError } from "axios";
 import createApiInstance from "../utils/api";
 import { type Product } from "../types";
 import { useAuth } from "../components/useAuth";
@@ -14,56 +15,105 @@ const AdminDashboard = () => {
     image2: "",
     image3: "",
   });
+  const [editProduct, setEditProduct] = useState<Product | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { token } = useAuth();
 
   // Fetch all products
   useEffect(() => {
     const fetchProducts = async () => {
+      setIsLoading(true);
+      setError(null);
       try {
         const api = createApiInstance(token);
         const response = await api.get("/product/");
         setProducts(response.data);
-      } catch (error: any) {
-        console.error("Error fetching products:", error.message);
+      } catch (error: AxiosError<{ msg: string }>) {
+        const message = error.response?.data.msg || "Failed to fetch products.";
+        setError(message);
+        alert(message);
+      } finally {
+        setIsLoading(false);
       }
     };
-    fetchProducts();
+    if (token) fetchProducts();
   }, [token]);
+
+  // Validate form inputs
+  const validateProduct = (product: Partial<Product>) => {
+    if (!product.name || product.name.trim() === "") return "Product name is required.";
+    if (product.price <= 0) return "Price must be greater than 0.";
+    if (product.stock < 0) return "Stock cannot be negative.";
+    if (!product.image1 || product.image1.trim() === "") return "At least one image URL is required.";
+    return null;
+  };
 
   // Create a product
   const handleCreate = async () => {
+    const validationError = validateProduct(newProduct);
+    if (validationError) {
+      alert(validationError);
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
     try {
       const api = createApiInstance(token);
       const response = await api.post("/product/", newProduct);
-      setProducts([...products, response.data.product]);
+      setProducts([...products, response.data]);
       setNewProduct({ name: "", description: "", price: 0, stock: 0, image1: "", image2: "", image3: "" });
-      console.log("Product created:", response.data);
-    } catch (error: any) {
-      console.error("Error creating product:", error.message);
+      alert("Product created successfully!");
+    } catch (error: AxiosError<{ msg: string }>) {
+      const message = error.response?.data.msg || "Failed to create product.";
+      setError(message);
+      alert(message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Update a product
-  const handleUpdate = async (id: number, updatedProduct: Partial<Product>) => {
+  const handleUpdate = async () => {
+    if (!editProduct) return;
+    const validationError = validateProduct(editProduct);
+    if (validationError) {
+      alert(validationError);
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
     try {
       const api = createApiInstance(token);
-      const response = await api.put(`/product/${id}`, updatedProduct);
-      setProducts(products.map((p) => (p.id === id ? response.data.product : p)));
-      console.log("Product updated:", response.data);
-    } catch (error: any) {
-      console.error("Error updating product:", error.message);
+      const response = await api.put(`/product/${editProduct.id}`, editProduct);
+      setProducts(products.map((p) => (p.id === editProduct.id ? response.data : p)));
+      setEditProduct(null);
+      alert("Product updated successfully!");
+    } catch (error: AxiosError<{ msg: string }>) {
+      const message = error.response?.data.msg || "Failed to update product.";
+      setError(message);
+      alert(message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Delete a product
   const handleDelete = async (id: number) => {
+    if (!window.confirm("Are you sure you want to delete this product?")) return;
+    setIsLoading(true);
+    setError(null);
     try {
       const api = createApiInstance(token);
       await api.delete(`/product/${id}`);
       setProducts(products.filter((p) => p.id !== id));
-      console.log("Product deleted:", id);
-    } catch (error: any) {
-      console.error("Error deleting product:", error.message);
+      alert("Product deleted successfully!");
+    } catch (error: AxiosError<{ msg: string }>) {
+      const message = error.response?.data.msg || "Failed to delete product.";
+      setError(message);
+      alert(message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -80,6 +130,20 @@ const AdminDashboard = () => {
           </p>
         </header>
 
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-100 text-red-700 rounded-md font-roboto">
+            {error}
+          </div>
+        )}
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="mb-6 text-center text-gray-600 font-roboto">
+            Loading...
+          </div>
+        )}
+
         {/* Create Product Form */}
         <section className="bg-white rounded-xl shadow-md p-6 mb-12">
           <h2 className="text-2xl font-semibold text-gray-900 mb-6 font-poppins">
@@ -88,10 +152,11 @@ const AdminDashboard = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <input
               type="text"
-              placeholder="Product Name"
+              placeholder="Product Name *"
               value={newProduct.name}
               onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
               className="border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent font-roboto"
+              required
             />
             <input
               type="text"
@@ -102,24 +167,30 @@ const AdminDashboard = () => {
             />
             <input
               type="number"
-              placeholder="Price"
+              placeholder="Price *"
               value={newProduct.price || ""}
               onChange={(e) => setNewProduct({ ...newProduct, price: parseFloat(e.target.value) || 0 })}
               className="border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent font-roboto"
+              min="0"
+              step="0.01"
+              required
             />
             <input
               type="number"
-              placeholder="Stock"
+              placeholder="Stock *"
               value={newProduct.stock || ""}
               onChange={(e) => setNewProduct({ ...newProduct, stock: parseInt(e.target.value) || 0 })}
               className="border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent font-roboto"
+              min="0"
+              required
             />
             <input
               type="text"
-              placeholder="Image 1 URL"
+              placeholder="Image 1 URL *"
               value={newProduct.image1}
               onChange={(e) => setNewProduct({ ...newProduct, image1: e.target.value })}
               className="border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent font-roboto"
+              required
             />
             <input
               type="text"
@@ -138,18 +209,107 @@ const AdminDashboard = () => {
           </div>
           <button
             onClick={handleCreate}
-            className="mt-6 w-full sm:w-auto bg-purple-600 text-white py-3 px-6 rounded-full font-semibold font-roboto hover:bg-purple-700 transition duration-300"
+            disabled={isLoading}
+            className={`mt-6 w-full sm:w-auto bg-purple-600 text-white py-3 px-6 rounded-full font-semibold font-roboto transition duration-300 ${
+              isLoading ? "opacity-50 cursor-not-allowed" : "hover:bg-purple-700"
+            }`}
           >
             Create Product
           </button>
         </section>
+
+        {/* Edit Product Modal */}
+        {editProduct && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-6 w-full max-w-md">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-6 font-poppins">
+                Edit Product
+              </h2>
+              <div className="grid grid-cols-1 gap-4">
+                <input
+                  type="text"
+                  placeholder="Product Name *"
+                  value={editProduct.name}
+                  onChange={(e) => setEditProduct({ ...editProduct, name: e.target.value })}
+                  className="border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent font-roboto"
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="Description"
+                  value={editProduct.description}
+                  onChange={(e) => setEditProduct({ ...editProduct, description: e.target.value })}
+                  className="border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent font-roboto"
+                />
+                <input
+                  type="number"
+                  placeholder="Price *"
+                  value={editProduct.price}
+                  onChange={(e) => setEditProduct({ ...editProduct, price: parseFloat(e.target.value) || 0 })}
+                  className="border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent font-roboto"
+                  min="0"
+                  step="0.01"
+                  required
+                />
+                <input
+                  type="number"
+                  placeholder="Stock *"
+                  value={editProduct.stock}
+                  onChange={(e) => setEditProduct({ ...editProduct, stock: parseInt(e.target.value) || 0 })}
+                  className="border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent font-roboto"
+                  min="0"
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="Image 1 URL *"
+                  value={editProduct.image1}
+                  onChange={(e) => setEditProduct({ ...editProduct, image1: e.target.value })}
+                  className="border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent font-roboto"
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="Image 2 URL (Optional)"
+                  value={editProduct.image2}
+                  onChange={(e) => setEditProduct({ ...editProduct, image2: e.target.value })}
+                  className="border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent font-roboto"
+                />
+                <input
+                  type="text"
+                  placeholder="Image 3 URL (Optional)"
+                  value={editProduct.image3}
+                  onChange={(e) => setEditProduct({ ...editProduct, image3: e.target.value })}
+                  className="border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-purple-500 focus:border-transparent font-roboto"
+                />
+              </div>
+              <div className="mt-6 flex space-x-4">
+                <button
+                  onClick={handleUpdate}
+                  disabled={isLoading}
+                  className={`flex-1 bg-purple-600 text-white py-3 rounded-full font-semibold font-roboto transition duration-300 ${
+                    isLoading ? "opacity-50 cursor-not-allowed" : "hover:bg-purple-700"
+                  }`}
+                >
+                  Save Changes
+                </button>
+                <button
+                  onClick={() => setEditProduct(null)}
+                  className="flex-1 bg-gray-300 text-gray-900 py-3 rounded-full font-semibold font-roboto hover:bg-gray-400 transition duration-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Product List */}
         <section>
           <h2 className="text-2xl font-semibold text-gray-900 mb-6 font-poppins">
             Manage Products
           </h2>
-          {products.length === 0 ? (
+          {products.length === 0 && !isLoading ? (
             <p className="text-gray-600 text-center text-lg font-roboto">
               No products available. Create one to get started!
             </p>
@@ -182,15 +342,10 @@ const AdminDashboard = () => {
                     </p>
                     <div className="mt-4 flex space-x-2">
                       <button
-                        onClick={() =>
-                          handleUpdate(product.id, {
-                            ...product,
-                            name: `${product.name} (Updated)`,
-                          })
-                        }
+                        onClick={() => setEditProduct(product)}
                         className="flex-1 bg-yellow-500 text-white py-2 rounded-md font-semibold font-roboto hover:bg-yellow-600 transition duration-300"
                       >
-                        Update Name
+                        Edit
                       </button>
                       <button
                         onClick={() => handleDelete(product.id)}

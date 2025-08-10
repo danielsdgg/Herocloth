@@ -1,3 +1,4 @@
+# app/__init__.py
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -12,7 +13,11 @@ jwt = JWTManager()
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
-    # In app/__init__.py, inside create_app()
+    
+    # Disable global strict slashes
+    app.url_map.strict_slashes = False
+
+    # Test CORS endpoint
     @app.route('/test-cors', methods=['GET', 'OPTIONS'])
     def test_cors():
         return jsonify({"msg": "CORS test successful"}), 200
@@ -34,7 +39,7 @@ def create_app():
     jwt.init_app(app)
     CORS(app, resources={r"/*": {
         "origins": ["http://localhost:3000"],
-        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization"]
     }})
 
@@ -46,7 +51,7 @@ def create_app():
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(user_bp, url_prefix='/user')
-    app.register_blueprint(product_bp, url_prefix='/product')
-    app.register_blueprint(cart_bp, url_prefix='/cart')
+    app.register_blueprint(product_bp, url_prefix='/product', strict_slashes=False)
+    app.register_blueprint(cart_bp, url_prefix='/cart', strict_slashes=False)
 
     return app

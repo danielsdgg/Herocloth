@@ -1,8 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import createApiInstance from "../utils/api";
 import { type Product } from "../types";
-import { useAuth } from "./useAuth";
+import { useCart } from "../Context/useCart";
 
 interface ProductCardProps {
   product: Product;
@@ -10,18 +9,10 @@ interface ProductCardProps {
 
 const ProductCard = ({ product }: ProductCardProps) => {
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const { addToCart } = useCart();
 
   const handleAddToCart = async () => {
-    try {
-      const api = createApiInstance(token);
-      await api.post("/cart/add", { product_id: product.id, quantity: 1 });
-      alert("Added to cart!");
-    } catch (error) {
-      console.error(error);
-      alert("Please login to add to cart");
-      navigate("/login");
-    }
+    await addToCart(product.id, 1);
   };
 
   return (

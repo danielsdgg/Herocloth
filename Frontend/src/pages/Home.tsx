@@ -29,10 +29,16 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-white font-montserrat">
       {/* Hero Section */}
-      <section className="relative h-[80vh] flex items-center justify-center bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1534452203293-494d7dd476ae?auto=format&fit=crop&w=1920&q=80')" }}>
+      <section
+        className="relative h-[80vh] flex items-center justify-center bg-cover bg-center"
+        style={{
+          backgroundImage:
+            "url('https://cdn.pixabay.com/photo/2021/06/10/10/12/fashion-6312728_640.jpg')",
+        }}
+      >
         <div className="absolute inset-0 bg-black bg-opacity-40"></div>
         <div className="relative z-10 text-center text-white px-4 sm:px-6 lg:px-8">
-          <h1 className="text-5xl text-gray-500 sm:text-6xl md:text-7xl font-bold font-playfair animate-fade-in-down">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold font-playfair animate-fade-in-down">
             Elevate Your Wardrobe
           </h1>
           <p className="mt-4 text-lg sm:text-xl md:text-2xl font-light opacity-90 animate-fade-in-down delay-100">
@@ -57,10 +63,17 @@ const Home = () => {
             Handpicked styles to inspire your next look.
           </p>
           <div className="flex space-x-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-gray-300">
-            {["New Arrivals", "Streetwear", "Elegant Classics", "Summer Vibes"].map((category) => (
+            {[
+              "New Arrivals",
+              "Streetwear",
+              "Elegant Classics",
+              "Summer Vibes",
+            ].map((category) => (
               <a
                 key={category}
-                href={`/category/${category.toLowerCase().replace(" ", "-")}`}
+                href={`/category/${category
+                  .toLowerCase()
+                  .replace(" ", "-")}`}
                 className="flex-shrink-0 bg-white rounded-lg shadow-md p-4 text-center w-40 hover:bg-amber-50 transition duration-300"
               >
                 <img
@@ -78,7 +91,10 @@ const Home = () => {
       </section>
 
       {/* Featured Products Section */}
-      <section id="products" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <section
+        id="products"
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16"
+      >
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 font-playfair">
             Trending Now

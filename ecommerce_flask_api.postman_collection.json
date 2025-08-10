@@ -248,6 +248,48 @@
               "path": ["cart"]
             }
           }
+        },
+        {
+          "name": "Update Cart Item",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"quantity\": 3}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/cart/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["cart", "1"]
+            }
+          }
+        },
+        {
+          "name": "Remove Cart Item",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cart/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["cart", "1"]
+            }
+          }
         }
       ]
     }
