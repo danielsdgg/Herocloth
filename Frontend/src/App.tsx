@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Navbar from "./components/Navbar";
 import FloatingCartButton from "./components/FloatingCartButton";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -17,7 +16,6 @@ const App = () => {
     <BrowserRouter>
       <AuthProvider>
         <CartProvider>
-          <Navbar />
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />

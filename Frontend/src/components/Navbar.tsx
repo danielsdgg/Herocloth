@@ -1,168 +1,243 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FaWhatsapp, FaHome, FaUser, FaSignOutAlt, FaSignInAlt, FaUserPlus, FaTachometerAlt } from "react-icons/fa";
-import { Bars3Icon, XMarkIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
-import { motion } from "framer-motion";
+import { FaHome, FaShoppingCart, FaUser } from "react-icons/fa";
+import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "./useAuth";
+
+const ROUTES = {
+  HOME: "/",
+  CART: "/cart",
+  LOGIN: "/login",
+  REGISTER: "/register",
+  PROFILE: "/profile",
+  DASHBOARD: "/admin",
+};
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
   const navigate = useNavigate();
   const { token, role, clearAuth } = useAuth();
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     clearAuth();
-    navigate("/login");
+    navigate(ROUTES.LOGIN);
     setIsOpen(false);
-  };
+    setIsAccountOpen(false);
+  }, [clearAuth, navigate]);
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-    // TODO: Implement search functionality (e.g., navigate to /search?q=query)
-  };
+  const toggleMobileMenu = useCallback(() => {
+    setIsOpen((prev) => !prev);
+    setIsAccountOpen(false); // Close account dropdown when toggling mobile menu
+  }, []);
+
+  const toggleAccountDropdown = useCallback(() => {
+    setIsAccountOpen((prev) => !prev);
+  }, []);
 
   const navItems = [
-    { to: "/", label: "Home", icon: <FaHome className="w-5 h-5 mr-2" /> },
-    ...(token
-      ? [
-          { to: "/profile", label: "Account", icon: <FaUser className="w-5 h-5 mr-2" /> },
-          ...(role === "admin"
-            ? [{ to: "/admin", label: "Dashboard", icon: <FaTachometerAlt className="w-5 h-5 mr-2" /> }]
-            : []),
-          { label: "Logout", action: handleLogout, icon: <FaSignOutAlt className="w-5 h-5 mr-2" /> },
-        ]
-      : [
-          { to: "/login", label: "Login", icon: <FaSignInAlt className="w-5 h-5 mr-2" /> },
-          { to: "/register", label: "Sign Up", icon: <FaUserPlus className="w-5 h-5 mr-2" /> },
-        ]),
-    {
-      to: "https://wa.me/254123456789",
-      label: "WhatsApp",
-      icon: <FaWhatsapp className="w-5 h-5 mr-2" />,
-      external: true,
-    },
+    { to: ROUTES.HOME, label: "Home", icon: <FaHome className="w-5 h-5 mr-2" /> },
+    { to: ROUTES.CART, label: "Cart", icon: <FaShoppingCart className="w-5 h-5 mr-2" /> },
   ];
 
+  const accountItems = token
+    ? [
+        { to: ROUTES.PROFILE, label: "Profile", icon: <FaUser className="w-4 h-4 mr-2" /> },
+        ...(role === "admin"
+          ? [{ to: ROUTES.DASHBOARD, label: "Dashboard", icon: null }]
+          : []),
+        { label: "Logout", action: handleLogout, icon: null },
+      ]
+    : [
+        { to: ROUTES.LOGIN, label: "Login", icon: null },
+        { to: ROUTES.REGISTER, label: "Sign Up", icon: null },
+      ];
+
   return (
-    <nav className="bg-white text-gray-900 sticky top-0 z-50 shadow-md font-montserrat">
+    <nav className="bg-slate-950 text-slate-100 sticky top-0 z-50 shadow-lg shadow-black/40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
-            <Link to="/" className="flex items-center">
-              <img
-                src="https://res.cloudinary.com/ddei3mzex/image/upload/v1709419077/IMG-20240109-WA0001_szj2fg.jpg"
-                alt="Herocloth Logo"
-                className="h-10 w-auto"
-              />
-              <span className="ml-3 text-2xl font-bold font-playfair text-gray-900">Herocloth</span>
+            <Link to={ROUTES.HOME} className="flex items-center group">
+              <motion.div
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-indigo-500 shadow-lg shadow-cyan-500/20"
+                whileHover={{ scale: 1.1 }}
+                transition={{ duration: 0.2 }}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-6 w-6 fill-slate-900"
+                  aria-hidden="true"
+                >
+                  <path d="M7 4h10l1 3h3v2h-1l-2 9H6L4 9H3V7h3l1-3zm2.2 5 1.5 7h7.1l1.6-7H9.2zM9 20a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm8 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z" />
+                </svg>
+              </motion.div>
+              <span className="ml-3 text-xl font-semibold tracking-tight group-hover:text-cyan-300 transition-colors duration-200">
+                Herocloth
+              </span>
             </Link>
           </div>
 
-          {/* Search Bar (Desktop) */}
-          <div className="hidden md:flex flex-1 mx-8">
-            <div className="relative w-full max-w-md">
-              <input
-                type="text"
-                placeholder="Search for products..."
-                value={searchQuery}
-                onChange={handleSearch}
-                className="w-full pl-10 pr-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
-                aria-label="Search products"
-              />
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
-            </div>
-          </div>
-
           {/* Desktop Menu */}
-          <div className="hidden md:flex md:items-center md:space-x-4">
-            {navItems.map((item) =>
-              item.action ? (
-                <button
-                  key={item.label}
-                  onClick={item.action}
-                  className="flex items-center px-3 py-2 text-sm font-semibold text-gray-900 hover:text-orange-500 hover:bg-orange-100 rounded-md transition duration-300"
-                  aria-label={item.label}
-                >
-                  {item.icon}
-                  {item.label}
-                </button>
-              ) : (
-                <Link
-                  key={item.label}
-                  to={item.to}
-                  className="flex items-center px-3 py-2 text-sm font-semibold text-gray-900 hover:text-orange-500 hover:bg-orange-100 rounded-md transition duration-300"
-                  {...(item.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                  aria-label={item.label}
-                >
-                  {item.icon}
-                  {item.label}
-                </Link>
-              )
-            )}
+          <div className="hidden md:flex md:items-center md:space-x-6">
+            {navItems.map((item) => (
+              <Link
+                key={item.label}
+                to={item.to}
+                className="flex items-center px-3 py-2 text-sm font-medium text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50 rounded-lg transition-all duration-200"
+                aria-label={item.label}
+              >
+                {item.icon}
+                {item.label}
+              </Link>
+            ))}
+            {/* Account Dropdown */}
+            <div className="relative">
+              <button
+                onClick={toggleAccountDropdown}
+                className="flex items-center px-3 py-2 text-sm font-medium text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50 rounded-lg transition-all duration-200"
+                aria-label="Account menu"
+                aria-expanded={isAccountOpen}
+              >
+                <FaUser className="w-5 h-5 mr-2" />
+                Account
+              </button>
+              <AnimatePresence>
+                {isAccountOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute right-0 mt-2 w-48 rounded-lg border border-white/10 bg-slate-900/70 backdrop-blur supports-[backdrop-filter]:bg-slate-900/60 shadow-xl shadow-black/40 py-2"
+                  >
+                    {accountItems.map((item) =>
+                      item.action ? (
+                        <button
+                          key={item.label}
+                          onClick={item.action}
+                          className="flex items-center w-full px-4 py-2 text-sm text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50 transition-all duration-200"
+                          aria-label={item.label}
+                        >
+                          {item.icon}
+                          {item.label}
+                        </button>
+                      ) : (
+                        <Link
+                          key={item.label}
+                          to={item.to}
+                          className="flex items-center w-full px-4 py-2 text-sm text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50 transition-all duration-200"
+                          onClick={() => setIsAccountOpen(false)}
+                          aria-label={item.label}
+                        >
+                          {item.icon}
+                          {item.label}
+                        </Link>
+                      )
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center">
             <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="p-2 text-gray-900 hover:text-orange-500 rounded-md transition duration-300"
+              onClick={toggleMobileMenu}
+              className="p-2 text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50 rounded-lg transition-all duration-200"
               aria-label={isOpen ? "Close menu" : "Open menu"}
             >
-              {isOpen ? <XMarkIcon className="h-6 w-6" /> : <Bars3Icon className="h-6 w-6" />}
+              {isOpen ? (
+                <XMarkIcon className="h-6 w-6" />
+              ) : (
+                <Bars3Icon className="h-6 w-6" />
+              )}
             </button>
           </div>
         </div>
       </div>
 
       {/* Mobile Menu */}
-      <motion.div
-        initial={{ height: 0, opacity: 0 }}
-        animate={{ height: isOpen ? "auto" : 0, opacity: isOpen ? 1 : 0 }}
-        transition={{ duration: 0.3 }}
-        className="md:hidden overflow-hidden bg-white shadow-md"
-      >
-        <div className="px-4 pt-2 pb-4 space-y-2">
-          {/* Mobile Search Bar */}
-          <div className="relative mb-4">
-            <input
-              type="text"
-              placeholder="Search for products..."
-              value={searchQuery}
-              onChange={handleSearch}
-              className="w-full pl-10 pr-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900"
-              aria-label="Search products"
-            />
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
-          </div>
-          {navItems.map((item) =>
-            item.action ? (
-              <button
-                key={item.label}
-                onClick={item.action}
-                className="flex items-center w-full px-4 py-2 text-base font-semibold text-gray-900 hover:text-orange-500 hover:bg-orange-100 rounded-md transition duration-300"
-                aria-label={item.label}
-              >
-                {item.icon}
-                {item.label}
-              </button>
-            ) : (
-              <Link
-                key={item.label}
-                to={item.to}
-                className="flex items-center w-full px-4 py-2 text-base font-semibold text-gray-900 hover:text-orange-500 hover:bg-orange-100 rounded-md transition duration-300"
-                onClick={() => setIsOpen(false)}
-                {...(item.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                aria-label={item.label}
-              >
-                {item.icon}
-                {item.label}
-              </Link>
-            )
-          )}
-        </div>
-      </motion.div>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="md:hidden overflow-hidden bg-slate-900/70 backdrop-blur supports-[backdrop-filter]:bg-slate-900/60 shadow-lg"
+          >
+            <div className="px-4 pt-2 pb-4 space-y-2">
+              {navItems.map((item) => (
+                <Link
+                  key={item.label}
+                  to={item.to}
+                  className="flex items-center w-full px-4 py-2 text-base font-medium text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50 rounded-lg transition-all duration-200"
+                  onClick={() => setIsOpen(false)}
+                  aria-label={item.label}
+                >
+                  {item.icon}
+                  {item.label}
+                </Link>
+              ))}
+              {/* Mobile Account Menu */}
+              <div className="pt-2 border-t border-white/10">
+                <button
+                  onClick={toggleAccountDropdown}
+                  className="flex items-center w-full px-4 py-2 text-base font-medium text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50 rounded-lg transition-all duration-200"
+                  aria-label="Account menu"
+                  aria-expanded={isAccountOpen}
+                >
+                  <FaUser className="w-5 h-5 mr-2" />
+                  Account
+                </button>
+                <AnimatePresence>
+                  {isAccountOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="pl-4 space-y-2"
+                    >
+                      {accountItems.map((item) =>
+                        item.action ? (
+                          <button
+                            key={item.label}
+                            onClick={item.action}
+                            className="flex items-center w-full px-4 py-2 text-sm text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50 rounded-lg transition-all duration-200"
+                            aria-label={item.label}
+                          >
+                            {item.icon}
+                            {item.label}
+                          </button>
+                        ) : (
+                          <Link
+                            key={item.label}
+                            to={item.to}
+                            className="flex items-center w-full px-4 py-2 text-sm text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50 rounded-lg transition-all duration-200"
+                            onClick={() => {
+                              setIsOpen(false);
+                              setIsAccountOpen(false);
+                            }}
+                            aria-label={item.label}
+                          >
+                            {item.icon}
+                            {item.label}
+                          </Link>
+                        )
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 };

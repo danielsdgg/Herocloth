@@ -3,7 +3,7 @@ import { toast } from "react-toastify";
 import createApiInstance from "../utils/api";
 import { useAuth } from "../components/useAuth";
 import { type CartItem } from "../types";
-import { AxiosError } from "axios";
+// import { AxiosError } from "axios";
 
 interface CartContextType {
   cartItems: CartItem[];
@@ -36,6 +36,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       console.log("Token used for cart request:", token);
       const response = await api.get<CartItem[]>("/cart/");
       setCartItems(response.data);
+      console.log("Cart fetch response:", response.data);
     } catch (error: any) {
       console.error("Error fetching cart:", {
         message: error.message,
@@ -43,10 +44,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         response: error.response?.data,
         status: error.response?.status,
         headers: error.response?.headers,
+        requestUrl: error.config?.url,
       });
       const message = error.code === "ERR_NETWORK"
         ? "Cannot connect to server. Please ensure the backend is running."
-        : error.response?.data?.msg || "Failed to load cart.";
+        : error.response?.data?.msg || `Failed to load cart (Status: ${error.response?.status})`;
       toast.error(message);
       if (error.response?.status === 401) {
         try {
@@ -75,6 +77,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       const api = createApiInstance(token);
       console.log("Adding to cart with baseURL:", api.defaults.baseURL);
       console.log("Token used for cart request:", token);
+      console.log("Add to cart payload:", { product_id: productId, quantity });
       await api.post("/cart/add", { product_id: productId, quantity });
       await fetchCart();
       toast.success("Added to cart!");
@@ -85,10 +88,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         response: error.response?.data,
         status: error.response?.status,
         headers: error.response?.headers,
+        requestUrl: error.config?.url,
       });
       const message = error.code === "ERR_NETWORK"
         ? "Cannot connect to server. Please ensure the backend is running."
-        : error.response?.data?.msg || "Failed to add item to cart.";
+        : error.response?.data?.msg || `Failed to add item to cart (Status: ${error.response?.status})`;
       toast.error(message);
       if (error.response?.status === 401) {
         try {
@@ -125,10 +129,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         response: error.response?.data,
         status: error.response?.status,
         headers: error.response?.headers,
+        requestUrl: error.config?.url,
       });
       const message = error.code === "ERR_NETWORK"
         ? "Cannot connect to server. Please ensure the backend is running."
-        : error.response?.data?.msg || "Failed to update cart item.";
+        : error.response?.data?.msg || `Failed to update cart item (Status: ${error.response?.status})`;
       toast.error(message);
       if (error.response?.status === 401) {
         try {
@@ -164,10 +169,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         response: error.response?.data,
         status: error.response?.status,
         headers: error.response?.headers,
+        requestUrl: error.config?.url,
       });
       const message = error.code === "ERR_NETWORK"
         ? "Cannot connect to server. Please ensure the backend is running."
-        : error.response?.data?.msg || "Failed to remove item from cart.";
+        : error.response?.data?.msg || `Failed to remove item from cart (Status: ${error.response?.status})`;
       toast.error(message);
       if (error.response?.status === 401) {
         try {
@@ -203,10 +209,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         response: error.response?.data,
         status: error.response?.status,
         headers: error.response?.headers,
+        requestUrl: error.config?.url,
       });
       const message = error.code === "ERR_NETWORK"
         ? "Cannot connect to server. Please ensure the backend is running."
-        : error.response?.data?.msg || "Failed to clear cart.";
+        : error.response?.data?.msg || `Failed to clear cart (Status: ${error.response?.status})`;
       toast.error(message);
       if (error.response?.status === 401) {
         try {
