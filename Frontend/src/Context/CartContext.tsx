@@ -1,8 +1,9 @@
-import { createContext, useState, useEffect, type ReactNode } from "react";
-import { AxiosError } from "axios";
+import { createContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { toast } from "react-toastify";
 import createApiInstance from "../utils/api";
 import { useAuth } from "../components/useAuth";
 import { type CartItem } from "../types";
+import { AxiosError } from "axios";
 
 interface CartContextType {
   cartItems: CartItem[];
@@ -20,116 +21,218 @@ export const CartContext = createContext<CartContextType | undefined>(undefined)
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { token } = useAuth();
+  const { token, refreshAccessToken, clearAuth } = useAuth();
 
-  // Fetch cart items from API
-  const fetchCart = async () => {
+  const fetchCart = useCallback(async () => {
+    if (!token) {
+      console.warn("No token available, skipping cart fetch.");
+      setCartItems([]);
+      return;
+    }
     setIsLoading(true);
     try {
-      if (!token) return;
       const api = createApiInstance(token);
-      const response = await api.get("/cart/"); // Use trailing slash
+      console.log("Fetching cart with baseURL:", api.defaults.baseURL);
+      console.log("Token used for cart request:", token);
+      const response = await api.get<CartItem[]>("/cart/");
       setCartItems(response.data);
-    } catch (error: AxiosError<{ msg: string }>) {
+    } catch (error: any) {
       console.error("Error fetching cart:", {
         message: error.message,
+        code: error.code,
         response: error.response?.data,
         status: error.response?.status,
+        headers: error.response?.headers,
       });
-      alert(error.response?.data.msg || "Failed to load cart.");
+      const message = error.code === "ERR_NETWORK"
+        ? "Cannot connect to server. Please ensure the backend is running."
+        : error.response?.data?.msg || "Failed to load cart.";
+      toast.error(message);
+      if (error.response?.status === 401) {
+        try {
+          await refreshAccessToken();
+          await fetchCart();
+        } catch (refreshError: any) {
+          console.error("Refresh token error:", {
+            message: refreshError.message,
+            code: refreshError.code,
+            response: refreshError.response?.data,
+            status: refreshError.response?.status,
+          });
+          toast.error(refreshError.response?.data?.msg || "Session expired. Please log in again.");
+          clearAuth();
+        }
+      }
+      setCartItems([]);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [token, refreshAccessToken, clearAuth]);
 
-  // Add item to cart
-  const addToCart = async (productId: number, quantity: number) => {
+  const addToCart = useCallback(async (productId: number, quantity: number) => {
     setIsLoading(true);
     try {
       const api = createApiInstance(token);
+      console.log("Adding to cart with baseURL:", api.defaults.baseURL);
+      console.log("Token used for cart request:", token);
       await api.post("/cart/add", { product_id: productId, quantity });
       await fetchCart();
-      alert("Added to cart!");
-    } catch (error: AxiosError<{ msg: string }>) {
+      toast.success("Added to cart!");
+    } catch (error: any) {
       console.error("Error adding to cart:", {
         message: error.message,
+        code: error.code,
         response: error.response?.data,
         status: error.response?.status,
+        headers: error.response?.headers,
       });
-      alert(error.response?.data.msg || "Failed to add item to cart.");
+      const message = error.code === "ERR_NETWORK"
+        ? "Cannot connect to server. Please ensure the backend is running."
+        : error.response?.data?.msg || "Failed to add item to cart.";
+      toast.error(message);
+      if (error.response?.status === 401) {
+        try {
+          await refreshAccessToken();
+          await addToCart(productId, quantity);
+        } catch (refreshError: any) {
+          console.error("Refresh token error:", {
+            message: refreshError.message,
+            code: refreshError.code,
+            response: refreshError.response?.data,
+            status: refreshError.response?.status,
+          });
+          toast.error(refreshError.response?.data?.msg || "Session expired. Please log in again.");
+          clearAuth();
+        }
+      }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [token, refreshAccessToken, clearAuth]);
 
-  // Update cart item quantity
-  const updateCartItem = async (cartItemId: number, quantity: number) => {
+  const updateCartItem = useCallback(async (cartItemId: number, quantity: number) => {
     if (quantity < 1) return;
     setIsLoading(true);
     try {
       const api = createApiInstance(token);
       await api.patch(`/cart/${cartItemId}`, { quantity });
       await fetchCart();
-      alert("Cart updated!");
-    } catch (error: AxiosError<{ msg: string }>) {
+      toast.success("Cart updated!");
+    } catch (error: any) {
       console.error("Error updating cart item:", {
         message: error.message,
+        code: error.code,
         response: error.response?.data,
         status: error.response?.status,
+        headers: error.response?.headers,
       });
-      alert(error.response?.data.msg || "Failed to update cart item.");
+      const message = error.code === "ERR_NETWORK"
+        ? "Cannot connect to server. Please ensure the backend is running."
+        : error.response?.data?.msg || "Failed to update cart item.";
+      toast.error(message);
+      if (error.response?.status === 401) {
+        try {
+          await refreshAccessToken();
+          await updateCartItem(cartItemId, quantity);
+        } catch (refreshError: any) {
+          console.error("Refresh token error:", {
+            message: refreshError.message,
+            code: refreshError.code,
+            response: refreshError.response?.data,
+            status: refreshError.response?.status,
+          });
+          toast.error(refreshError.response?.data?.msg || "Session expired. Please log in again.");
+          clearAuth();
+        }
+      }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [token, refreshAccessToken, clearAuth]);
 
-  // Remove item from cart
-  const removeFromCart = async (cartItemId: number) => {
+  const removeFromCart = useCallback(async (cartItemId: number) => {
     setIsLoading(true);
     try {
       const api = createApiInstance(token);
       await api.delete(`/cart/${cartItemId}`);
       await fetchCart();
-      alert("Item removed from cart!");
-    } catch (error: AxiosError<{ msg: string }>) {
+      toast.success("Item removed from cart!");
+    } catch (error: any) {
       console.error("Error removing from cart:", {
         message: error.message,
+        code: error.code,
         response: error.response?.data,
         status: error.response?.status,
+        headers: error.response?.headers,
       });
-      alert(error.response?.data.msg || "Failed to remove item from cart.");
+      const message = error.code === "ERR_NETWORK"
+        ? "Cannot connect to server. Please ensure the backend is running."
+        : error.response?.data?.msg || "Failed to remove item from cart.";
+      toast.error(message);
+      if (error.response?.status === 401) {
+        try {
+          await refreshAccessToken();
+          await removeFromCart(cartItemId);
+        } catch (refreshError: any) {
+          console.error("Refresh token error:", {
+            message: refreshError.message,
+            code: refreshError.code,
+            response: refreshError.response?.data,
+            status: refreshError.response?.status,
+          });
+          toast.error(refreshError.response?.data?.msg || "Session expired. Please log in again.");
+          clearAuth();
+        }
+      }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [token, refreshAccessToken, clearAuth]);
 
-  // Clear cart
-  const clearCart = async () => {
+  const clearCart = useCallback(async () => {
     setIsLoading(true);
     try {
       const api = createApiInstance(token);
-      await api.delete("/cart/"); // Use trailing slash
+      await api.delete("/cart/");
       await fetchCart();
-      alert("Cart cleared!");
-    } catch (error: AxiosError<{ msg: string }>) {
+      toast.success("Cart cleared!");
+    } catch (error: any) {
       console.error("Error clearing cart:", {
         message: error.message,
+        code: error.code,
         response: error.response?.data,
         status: error.response?.status,
+        headers: error.response?.headers,
       });
-      alert(error.response?.data.msg || "Failed to clear cart.");
+      const message = error.code === "ERR_NETWORK"
+        ? "Cannot connect to server. Please ensure the backend is running."
+        : error.response?.data?.msg || "Failed to clear cart.";
+      toast.error(message);
+      if (error.response?.status === 401) {
+        try {
+          await refreshAccessToken();
+          await clearCart();
+        } catch (refreshError: any) {
+          console.error("Refresh token error:", {
+            message: refreshError.message,
+            code: refreshError.code,
+            response: refreshError.response?.data,
+            status: refreshError.response?.status,
+          });
+          toast.error(refreshError.response?.data?.msg || "Session expired. Please log in again.");
+          clearAuth();
+        }
+      }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [token, refreshAccessToken, clearAuth]);
 
-  // Fetch cart on mount or when token changes
   useEffect(() => {
     fetchCart();
-  }, [token]);
+  }, [fetchCart]);
 
-  // Calculate cart item count (number of unique items)
-  const cartItemCount = cartItems.length; // Change to sum(cartItems.quantity) if preferred
+  const cartItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <CartContext.Provider

@@ -1,15 +1,12 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
-import { type Product } from "../types";
 import { useCart } from "../Context/useCart";
+import { type Product } from "../types";
 
 interface ProductCardProps {
   product: Product;
 }
 
 const ProductCard = ({ product }: ProductCardProps) => {
-  const navigate = useNavigate();
-  const { addToCart } = useCart();
+  const { addToCart, isLoading } = useCart();
 
   const handleAddToCart = async () => {
     await addToCart(product.id, 1);
@@ -50,11 +47,11 @@ const ProductCard = ({ product }: ProductCardProps) => {
         <button
           onClick={handleAddToCart}
           className={`mt-4 w-full py-2 px-4 rounded-md font-semibold text-sm font-montserrat transition duration-300 ${
-            product.stock === 0
+            product.stock === 0 || isLoading
               ? "bg-gray-400 text-gray-700 cursor-not-allowed"
               : "bg-amber-600 text-white hover:bg-amber-700"
           }`}
-          disabled={product.stock === 0}
+          disabled={product.stock === 0 || isLoading}
         >
           {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
         </button>

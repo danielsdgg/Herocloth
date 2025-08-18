@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {  FaHome, FaUser, FaSignOutAlt, FaSignInAlt, FaUserPlus, FaTachometerAlt } from "react-icons/fa";
+import { FaWhatsapp, FaHome, FaUser, FaSignOutAlt, FaSignInAlt, FaUserPlus, FaTachometerAlt } from "react-icons/fa";
 import { Bars3Icon, XMarkIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
 import { useAuth } from "./useAuth";
@@ -36,7 +36,12 @@ const Navbar = () => {
           { to: "/login", label: "Login", icon: <FaSignInAlt className="w-5 h-5 mr-2" /> },
           { to: "/register", label: "Sign Up", icon: <FaUserPlus className="w-5 h-5 mr-2" /> },
         ]),
-    
+    {
+      to: "https://wa.me/254123456789",
+      label: "WhatsApp",
+      icon: <FaWhatsapp className="w-5 h-5 mr-2" />,
+      external: true,
+    },
   ];
 
   return (

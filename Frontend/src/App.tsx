@@ -7,6 +7,7 @@ import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import Cart from "./pages/Cart";
 import AdminDashboard from "./pages/AdminDashboard";
+import ProductDetails from "./pages/ProductDetails";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./components/AuthContext";
 import { CartProvider } from "./Context/CartContext";
@@ -45,6 +46,7 @@ const App = () => {
                 </ProtectedRoute>
               }
             />
+            <Route path="/product/:id" element={<ProductDetails />} />
           </Routes>
           <FloatingCartButton />
         </CartProvider>

@@ -1,140 +1,135 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
+// import { AxiosError } from "axios";
+import { toast } from "react-toastify";
 import createApiInstance from "../utils/api";
 import { type Product } from "../types";
-import ProductCard from "../components/ProductCard";
+import { useCart } from "../Context/useCart";
 import { useAuth } from "../components/useAuth";
 
 const Home = () => {
   const [products, setProducts] = useState<Product[]>([]);
+  const { addToCart, isLoading: cartLoading } = useCart();
   const { token } = useAuth();
+  const navigate = useNavigate();
+  const productsRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const api = createApiInstance(token);
-        const response = await api.get("/product/");
-        setProducts(response.data);
+        const api = createApiInstance(null);
+        const response = await api.get<Product[]>("/product/");
         console.log("Products response:", response.data);
+        setProducts(response.data || []); // Handle empty response
       } catch (error: any) {
-        console.error("AxiosError:", {
+        console.error("Error fetching products:", {
           message: error.message,
+          code: error.code,
           response: error.response?.data,
           status: error.response?.status,
+          headers: error.response?.headers,
         });
+        const message = error.code === "ERR_NETWORK"
+          ? "Cannot connect to server. Please ensure the backend is running."
+          : error.response?.data?.msg || "Failed to fetch products.";
+        toast.error(message);
       }
     };
     fetchProducts();
-  }, [token]);
+  }, []);
+
+  const handleAddToCart = async (productId: number) => {
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+    await addToCart(productId, 1);
+  };
+
+  const handleShopNow = () => {
+    productsRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   return (
-    <div className="min-h-screen bg-white font-montserrat">
-      {/* Hero Section */}
-      <section
-        className="relative h-[80vh] flex items-center justify-center bg-cover bg-center"
-        style={{
-          backgroundImage:
-            "url('https://cdn.pixabay.com/photo/2021/06/10/10/12/fashion-6312728_640.jpg')",
-        }}
-      >
-        <div className="absolute inset-0 bg-black bg-opacity-40"></div>
-        <div className="relative z-10 text-center text-white px-4 sm:px-6 lg:px-8">
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold font-playfair animate-fade-in-down">
-            Elevate Your Wardrobe
+    <div className="min-h-screen bg-gray-50">
+      <section className="bg-gradient-to-r from-pink-500 to-rose-500 text-white py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h1 className="text-5xl md:text-6xl font-extrabold font-playfair mb-4">
+            Find Your Perfect Look
           </h1>
-          <p className="mt-4 text-lg sm:text-xl md:text-2xl font-light opacity-90 animate-fade-in-down delay-100">
-            Discover premium fashion crafted for the bold and stylish.
+          <p className="text-xl md:text-2xl font-montserrat mb-8">
+            Dive into our vibrant collection of premium fashion.
           </p>
-          <a
-            href="#products"
-            className="mt-8 inline-block bg-amber-500 text-white font-semibold py-3 px-10 rounded-md hover:bg-amber-600 transition duration-300 transform hover:scale-105 font-montserrat"
+          <button
+            onClick={handleShopNow}
+            className="inline-block bg-yellow-400 text-rose-600 py-3 px-10 rounded-full font-montserrat font-semibold text-lg hover:bg-yellow-300 transition duration-300"
           >
-            Explore Now
-          </a>
+            Shop Now
+          </button>
         </div>
       </section>
-
-      {/* Featured Collections Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 font-playfair mb-4">
-            Curated Collections
-          </h2>
-          <p className="text-lg text-gray-600 mb-8 font-montserrat">
-            Handpicked styles to inspire your next look.
-          </p>
-          <div className="flex space-x-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-gray-300">
-            {[
-              "New Arrivals",
-              "Streetwear",
-              "Elegant Classics",
-              "Summer Vibes",
-            ].map((category) => (
-              <a
-                key={category}
-                href={`/category/${category
-                  .toLowerCase()
-                  .replace(" ", "-")}`}
-                className="flex-shrink-0 bg-white rounded-lg shadow-md p-4 text-center w-40 hover:bg-amber-50 transition duration-300"
-              >
-                <img
-                  src={`https://via.placeholder.com/100?text=${category}`}
-                  alt={category}
-                  className="w-16 h-16 mx-auto mb-2 rounded-full object-cover"
-                />
-                <span className="text-sm font-semibold text-gray-900 font-montserrat">
-                  {category}
-                </span>
-              </a>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Products Section */}
-      <section
-        id="products"
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16"
-      >
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 font-playfair">
-            Trending Now
-          </h2>
-          <a
-            href="/products"
-            className="text-amber-600 font-semibold hover:underline font-montserrat"
-          >
-            See All Products
-          </a>
-        </div>
+      <section ref={productsRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 font-playfair mb-8 text-center">
+          Our Collection
+        </h2>
         {products.length === 0 ? (
-          <p className="text-gray-600 text-center text-lg font-montserrat">
-            No products available. New styles coming soon!
-          </p>
+          <div className="text-center">
+            <div className="spinner-border text-pink-500" role="status"></div>
+            <p className="text-gray-600 font-montserrat mt-4">No products available.</p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <div
+                key={product.id}
+                className="bg-white rounded-xl shadow-lg overflow-hidden transform transition duration-300 hover:shadow-2xl hover:-translate-y-1"
+              >
+                <div className="relative w-full h-64">
+                  <img
+                    src={product.image1 || "https://via.placeholder.com/300x300?text=No+Image"}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                  {product.stock === 0 && (
+                    <span className="absolute top-2 right-2 bg-rose-500 text-white text-xs font-semibold px-2 py-1 rounded-full font-montserrat">
+                      Out of Stock
+                    </span>
+                  )}
+                </div>
+                <div className="p-6">
+                  <h3 className="text-lg font-bold text-gray-900 truncate font-playfair">
+                    {product.name}
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-2 font-montserrat line-clamp-2">
+                    {product.description || "No description available"}
+                  </p>
+                  <p className="text-xl font-bold text-pink-500 mt-3 font-playfair">
+                    ${product.price.toFixed(2)}
+                  </p>
+                  <div className="mt-4 flex space-x-3">
+                    <button
+                      onClick={() => handleAddToCart(product.id)}
+                      disabled={cartLoading || product.stock === 0}
+                      className={`flex-1 py-2 px-4 rounded-full font-montserrat font-semibold text-sm transition duration-300 ${
+                        cartLoading || product.stock === 0
+                          ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+                          : "bg-pink-500 text-white hover:bg-pink-600"
+                      }`}
+                    >
+                      Add to Cart
+                    </button>
+                    <Link
+                      to={`/product/${product.id}`}
+                      className="flex-1 py-2 px-4 rounded-full font-montserrat font-semibold text-sm text-center bg-rose-500 text-white hover:bg-rose-600 transition duration-300"
+                    >
+                      View Details
+                    </Link>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         )}
-      </section>
-
-      {/* Promotional Banner */}
-      <section className="bg-amber-100 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 font-playfair mb-4">
-            Exclusive Offer
-          </h2>
-          <p className="text-lg text-gray-600 mb-6 font-montserrat">
-            Get 20% off your first purchase when you sign up today!
-          </p>
-          <a
-            href="/auth/register"
-            className="inline-block bg-amber-500 text-white font-semibold py-3 px-10 rounded-md hover:bg-amber-600 transition duration-300 font-montserrat"
-          >
-            Join Now
-          </a>
-        </div>
       </section>
     </div>
   );
