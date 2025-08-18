@@ -1,10 +1,6 @@
-from os import environ
-from dotenv import load_dotenv
-
-load_dotenv()
+import os
 
 class Config:
-    SECRET_KEY = environ.get('SECRET_KEY')
-    JWT_SECRET_KEY = environ.get('JWT_SECRET_KEY')
-    SQLALCHEMY_DATABASE_URI = environ.get('DATABASE_URL')
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///ecommerce.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'fc06b4467efe565d9368c0259f61788e')

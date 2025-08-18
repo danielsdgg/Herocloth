@@ -1,10 +1,9 @@
-# app/__init__.py
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
-from config import Config
+import os
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -12,46 +11,44 @@ jwt = JWTManager()
 
 def create_app():
     app = Flask(__name__)
-    app.config.from_object(Config)
-    
-    # Disable global strict slashes
-    app.url_map.strict_slashes = False
 
-    # Test CORS endpoint
-    @app.route('/test-cors', methods=['GET', 'OPTIONS'])
-    def test_cors():
-        return jsonify({"msg": "CORS test successful"}), 200
+    # Use absolute path for database to avoid path resolution issues
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    default_db_path = os.path.join(basedir, 'ecommerce.db')
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', f'sqlite:///{default_db_path}')
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'fc06b4467efe565d9368c0259f61788e')
 
-    # Enable logging
-    import logging
-    logging.basicConfig(level=logging.DEBUG)
-    logger = logging.getLogger(__name__)
-    app.logger.setLevel(logging.DEBUG)
+    # Initialize CORS with global configuration
+    CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
 
-    # Log all incoming requests
+    # Handle OPTIONS requests globally
     @app.before_request
-    def log_request():
-        app.logger.debug(f"Received {request.method} request for {request.url}")
+    def handle_options():
+        if request.method == "OPTIONS":
+            response = jsonify({"msg": "CORS preflight successful"})
+            response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
+            response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
+            response.headers.add("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
+            response.headers.add("Access-Control-Allow-Credentials", "true")
+            return response, 200
 
-    # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
-    CORS(app, resources={r"/*": {
-        "origins": ["http://localhost:3000"],
-        "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization"]
-    }})
 
-    # Register blueprints
-    from app.routes.auth import auth_bp
-    from app.routes.user import user_bp
-    from app.routes.product import product_bp
-    from app.routes.cart import cart_bp
-
-    app.register_blueprint(auth_bp, url_prefix='/auth')
-    app.register_blueprint(user_bp, url_prefix='/user')
-    app.register_blueprint(product_bp, url_prefix='/product', strict_slashes=False)
-    app.register_blueprint(cart_bp, url_prefix='/cart', strict_slashes=False)
+    with app.app_context():
+        from app.models.user import User
+        from app.models.product import Product
+        from app.models.cart import Cart
+        from app.routes.auth import auth_bp
+        from app.routes.cart import cart_bp
+        from app.routes.product import product_bp
+        from app.routes.user import user_bp
+        app.register_blueprint(auth_bp, url_prefix='/auth')
+        app.register_blueprint(cart_bp, url_prefix='/cart')
+        app.register_blueprint(product_bp, url_prefix='/product')
+        app.register_blueprint(user_bp, url_prefix='/user')
+        db.create_all()
 
     return app
