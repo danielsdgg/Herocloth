@@ -8,7 +8,7 @@ from flask_cors import cross_origin
 
 cart_bp = Blueprint('cart', __name__)
 
-@cart_bp.route('/cart/', methods=['GET'])
+@cart_bp.route('/', methods=['GET'])  # Changed from '/cart/'
 @jwt_required()
 @cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
 def get_cart():
@@ -35,7 +35,7 @@ def get_cart():
         current_app.logger.error(f"Error fetching cart for user_id: {current_user_id}: {str(e)}")
         return jsonify({"msg": f"Internal server error: {str(e)}"}), 500
 
-@cart_bp.route('/cart/add', methods=['POST'])
+@cart_bp.route('/add', methods=['POST'])  # Changed from '/cart/add'
 @jwt_required()
 @cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
 def add_to_cart():
@@ -72,7 +72,7 @@ def add_to_cart():
         current_app.logger.error(f"Error adding to cart for user_id: {current_user_id}: {str(e)}")
         return jsonify({"msg": f"Internal server error: {str(e)}"}), 500
 
-@cart_bp.route('/cart/<int:cart_item_id>', methods=['PATCH'])
+@cart_bp.route('/<int:cart_item_id>', methods=['PATCH'])
 @jwt_required()
 @cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
 def update_cart_item(cart_item_id):
@@ -108,7 +108,7 @@ def update_cart_item(cart_item_id):
         current_app.logger.error(f"Error updating cart item for user_id: {current_user_id}: {str(e)}")
         return jsonify({"msg": f"Internal server error: {str(e)}"}), 500
 
-@cart_bp.route('/cart/<int:cart_item_id>', methods=['DELETE'])
+@cart_bp.route('/<int:cart_item_id>', methods=['DELETE'])
 @jwt_required()
 @cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
 def delete_cart_item(cart_item_id):
@@ -128,7 +128,7 @@ def delete_cart_item(cart_item_id):
         current_app.logger.error(f"Error deleting cart item for user_id: {current_user_id}: {str(e)}")
         return jsonify({"msg": f"Internal server error: {str(e)}"}), 500
 
-@cart_bp.route('/cart/', methods=['DELETE'])
+@cart_bp.route('/', methods=['DELETE'])  # Changed from '/cart/'
 @jwt_required()
 @cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
 def clear_cart():

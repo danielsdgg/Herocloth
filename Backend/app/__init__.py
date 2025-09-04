@@ -50,5 +50,6 @@ def create_app():
         app.register_blueprint(product_bp, url_prefix='/product')
         app.register_blueprint(user_bp, url_prefix='/user')
         db.create_all()
+        print("Registered blueprints:", [rule.endpoint for rule in app.url_map.iter_rules()])  # Debug statement
 
     return app
