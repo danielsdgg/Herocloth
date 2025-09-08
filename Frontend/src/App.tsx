@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import FloatingCartButton from "./components/FloatingCartButton";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -11,42 +11,58 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./components/AuthContext";
 import { CartProvider } from "./Context/CartContext";
 
+const AppContent = () => {
+  const location = useLocation();
+
+  // pages where FloatingCartButton should be hidden
+  const hideCartButtonRoutes = ["/login", "/register"];
+
+  const shouldShowCartButton = !hideCartButtonRoutes.includes(location.pathname);
+
+  return (
+    <>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/cart"
+          element={
+            <ProtectedRoute>
+              <Cart />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute adminOnly={true}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/product/:id" element={<ProductDetails />} />
+      </Routes>
+
+      {shouldShowCartButton && <FloatingCartButton />}
+    </>
+  );
+};
+
 const App = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
         <CartProvider>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/cart"
-              element={
-                <ProtectedRoute>
-                  <Cart />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute adminOnly={true}>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/product/:id" element={<ProductDetails />} />
-          </Routes>
-          <FloatingCartButton />
+          <AppContent />
         </CartProvider>
       </AuthProvider>
     </BrowserRouter>

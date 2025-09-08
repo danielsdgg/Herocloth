@@ -1,3 +1,4 @@
+# app/models/product.py
 from app import db
 
 class Product(db.Model):
@@ -10,6 +11,12 @@ class Product(db.Model):
     image1 = db.Column(db.String(200), nullable=True)
     image2 = db.Column(db.String(200), nullable=True)
     image3 = db.Column(db.String(200), nullable=True)
+    category = db.Column(
+        db.String(50),
+        nullable=False,
+        default='bottoms',
+        server_default='bottoms'
+    )
 
     def __repr__(self):
         return f'<Product {self.name}>'

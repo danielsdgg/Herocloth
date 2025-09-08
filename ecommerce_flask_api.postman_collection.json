@@ -83,6 +83,23 @@
               "path": ["auth", "login"]
             }
           }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            }
+          }
         }
       ]
     },
@@ -103,6 +120,107 @@
               "raw": "{{baseUrl}}/user/profile",
               "host": ["{{baseUrl}}"],
               "path": ["user", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Update User Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\": \"newusername\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Get All Users (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/all",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "all"]
+            }
+          }
+        },
+        {
+          "name": "Get User by ID (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/2",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "2"]
+            }
+          }
+        },
+        {
+          "name": "Update User Role (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"role\": \"admin\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/2",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "2"]
+            }
+          }
+        },
+        {
+          "name": "Delete User (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/2",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "2"]
             }
           }
         }
@@ -127,7 +245,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\"name\": \"New Product\", \"description\": \"A great product\", \"price\": 29.99, \"stock\": 100, \"image1\": \"http://example.com/image1.jpg\", \"image2\": null, \"image3\": null}"
+              "raw": "{\"name\": \"New Product\", \"description\": \"A great product\", \"price\": 29.99, \"stock\": 100, \"image1\": \"http://example.com/image1.jpg\", \"category\": \"tops\"}"
             },
             "url": {
               "raw": "{{baseUrl}}/product",
@@ -152,7 +270,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\"name\": \"Updated Product\", \"description\": \"An updated great product\", \"price\": 39.99, \"stock\": 50, \"image1\": \"http://example.com/updated_image1.jpg\", \"image2\": null, \"image3\": null}"
+              "raw": "{\"name\": \"Updated Product\", \"description\": \"An updated great product\", \"price\": 39.99, \"stock\": 50, \"image1\": \"http://example.com/updated_image1.jpg\", \"category\": \"tops\"}"
             },
             "url": {
               "raw": "{{baseUrl}}/product/1",
@@ -199,6 +317,24 @@
               "raw": "{{baseUrl}}/product/1",
               "host": ["{{baseUrl}}"],
               "path": ["product", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get Products by Category",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/product?category=bottoms",
+              "host": ["{{baseUrl}}"],
+              "path": ["product"],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "bottoms"
+                }
+              ]
             }
           }
         }
@@ -288,6 +424,23 @@
               "raw": "{{baseUrl}}/cart/1",
               "host": ["{{baseUrl}}"],
               "path": ["cart", "1"]
+            }
+          }
+        },
+        {
+          "name": "Clear Cart",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cart",
+              "host": ["{{baseUrl}}"],
+              "path": ["cart"]
             }
           }
         }

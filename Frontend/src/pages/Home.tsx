@@ -6,20 +6,44 @@ import { type Product } from "../types";
 import { useCart } from "../Context/useCart";
 import { useAuth } from "../components/useAuth";
 import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 
 const Home = () => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [sortOption, setSortOption] = useState<string>("default");
   const { addToCart, isLoading: cartLoading } = useCart();
   const { token } = useAuth();
   const navigate = useNavigate();
   const productsRef = useRef<HTMLElement>(null);
+
+  // Infer category from product name
+  const inferCategory = (productName: string): string => {
+    const name = productName.toLowerCase();
+    if (name.includes("jeans") || name.includes("pants") || name.includes("trousers")) {
+      return "bottoms";
+    } else if (name.includes("shirt") || name.includes("top") || name.includes("blouse")) {
+      return "tops";
+    } else if (name.includes("dress") || name.includes("gown")) {
+      return "dresses";
+    } else if (name.includes("jacket") || name.includes("coat") || name.includes("sweater")) {
+      return "outerwear";
+    }
+    return "other"; // Fallback for uncategorized products
+  };
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const api = createApiInstance(null);
         const response = await api.get<Product[]>("/product/");
-        setProducts(response.data || []);
+        const productsWithCategories = response.data.map((product) => ({
+          ...product,
+          category: inferCategory(product.name),
+        }));
+        setProducts(productsWithCategories || []);
+        setFilteredProducts(productsWithCategories || []);
       } catch (error: any) {
         const message =
           error.code === "ERR_NETWORK"
@@ -30,6 +54,27 @@ const Home = () => {
     };
     fetchProducts();
   }, []);
+
+  // Filter and sort products
+  useEffect(() => {
+    let updatedProducts = [...products];
+
+    // Category filter
+    if (categoryFilter !== "all") {
+      updatedProducts = updatedProducts.filter(
+        (product) => product.category === categoryFilter
+      );
+    }
+
+    // Sorting
+    if (sortOption === "price-low") {
+      updatedProducts.sort((a, b) => a.price - b.price);
+    } else if (sortOption === "price-high") {
+      updatedProducts.sort((a, b) => b.price - a.price);
+    }
+
+    setFilteredProducts(updatedProducts);
+  }, [products, categoryFilter, sortOption]);
 
   const handleAddToCart = useCallback(
     async (productId: number) => {
@@ -57,36 +102,56 @@ const Home = () => {
         </div>
 
         {/* Hero Section */}
-        <section className="bg-gradient-to-r from-cyan-500/20 via-sky-500/20 to-indigo-500/20 py-20">
+        <section className="bg-gradient-to-r from-cyan-500/20 via-sky-500/20 to-indigo-500/20 py-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            {/* <div className="mb-8 inline-flex items-center gap-2">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-indigo-500 shadow-lg shadow-cyan-500/20">
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-6 w-6 fill-slate-900"
-                  aria-hidden="true"
-                >
-                  <path d="M7 4h10l1 3h3v2h-1l-2 9H6L4 9H3V7h3l1-3zm2.2 5 1.5 7h7.1l1.6-7H9.2zM9 20a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm8 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z" />
-                </svg>
-              </span>
-              <span className="text-lg font-semibold tracking-tight">
-                YourStore
-              </span>
-            </div> */}
-            <h1 className="text-4xl md:text-5xl font-semibold tracking-tight mb-4">
-              Find Your Perfect Look
+            <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-indigo-400 animate-pulse">
+              Elevate Your Wardrobe
             </h1>
-            <p className="text-lg md:text-xl text-slate-300 mb-8 max-w-2xl mx-auto">
-              Dive into our vibrant collection of premium fashion, crafted for
-              style and comfort.
+            <p className="text-lg md:text-xl text-slate-300 mb-10 max-w-3xl mx-auto">
+              Discover curated clothing collections crafted for style and sophistication.
             </p>
             <button
               onClick={handleShopNow}
-              className="cursor-pointer group relative inline-flex items-center justify-center overflow-hidden rounded-xl bg-gradient-to-r from-cyan-500 via-sky-500 to-indigo-500 px-8 py-3 font-medium text-white shadow-lg transition hover:from-cyan-400 hover:via-sky-400 hover:to-indigo-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+              className="relative inline-flex items-center justify-center overflow-hidden rounded-xl bg-gradient-to-r from-cyan-500 via-sky-500 to-indigo-500 px-10 py-4 font-medium text-white shadow-lg transition transform hover:scale-105 hover:from-cyan-400 hover:via-sky-400 hover:to-indigo-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
             >
-              <span className="cursor-pointer absolute inset-0 -z-10 opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-30 bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-indigo-500" />
-              Shop Now
+              <span className="absolute inset-0 -z-10 opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-30 bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-indigo-500" />
+              Explore Now
             </button>
+          </div>
+        </section>
+
+        {/* Filters Section */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col sm:flex-row gap-6 items-center justify-between mb-8">
+            {/* Category Filter */}
+            <div className="flex flex-col w-full sm:w-1/3">
+              <label className="text-sm font-medium text-slate-300 mb-2">Clothing Category</label>
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="rounded-xl bg-slate-800/70 border border-white/10 text-slate-100 py-3 px-4 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all duration-300 hover:bg-slate-800/90"
+              >
+                <option value="all">All Clothing</option>
+                <option value="tops">Tops</option>
+                <option value="bottoms">Bottoms</option>
+                <option value="dresses">Dresses</option>
+                <option value="outerwear">Outerwear</option>
+              </select>
+            </div>
+
+            {/* Sort Option */}
+            <div className="flex flex-col w-full sm:w-1/3">
+              <label className="text-sm font-medium text-slate-300 mb-2">Sort By</label>
+              <select
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value)}
+                className="rounded-xl bg-slate-800/70 border border-white/10 text-slate-100 py-3 px-4 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all duration-300 hover:bg-slate-800/90"
+              >
+                <option value="default">Default</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+              </select>
+            </div>
           </div>
         </section>
 
@@ -95,10 +160,10 @@ const Home = () => {
           ref={productsRef}
           className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
         >
-          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight mb-8 text-center">
-            Our Collection
+          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight mb-8 text-center bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-indigo-400">
+            Our Clothing Collection
           </h2>
-          {products.length === 0 ? (
+          {filteredProducts.length === 0 ? (
             <div className="text-center">
               <div
                 className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-cyan-400 border-t-transparent"
@@ -106,15 +171,15 @@ const Home = () => {
                 aria-label="Loading products"
               ></div>
               <p className="text-slate-400 font-medium mt-4">
-                No products available.
+                {products.length === 0 ? "No clothing available." : "No clothing matches your filters."}
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {products.map((product) => (
+              {filteredProducts.map((product) => (
                 <div
                   key={product.id}
-                  className="rounded-2xl border border-white/10 bg-slate-900/70 backdrop-blur supports-[backdrop-filter]:bg-slate-900/60 shadow-xl shadow-black/40 overflow-hidden transition-transform duration-300 hover:-translate-y-1 hover:shadow-2xl"
+                  className="rounded-2xl border border-white/10 bg-slate-900/70 backdrop-blur supports-[backdrop-filter]:bg-slate-900/60 shadow-xl shadow-black/40 overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:border-cyan-500/40"
                 >
                   <div className="relative w-full h-64">
                     <img
@@ -123,7 +188,7 @@ const Home = () => {
                         "https://via.placeholder.com/300x300?text=No+Image"
                       }
                       alt={product.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                       loading="lazy"
                     />
                     {product.stock === 0 && (
@@ -166,6 +231,7 @@ const Home = () => {
           )}
         </section>
       </div>
+      <Footer/>
     </>
   );
 };

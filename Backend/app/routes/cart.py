@@ -8,7 +8,7 @@ from flask_cors import cross_origin
 
 cart_bp = Blueprint('cart', __name__)
 
-@cart_bp.route('/', methods=['GET'])  # Changed from '/cart/'
+@cart_bp.route('/', methods=['GET'])  
 @jwt_required()
 @cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
 def get_cart():

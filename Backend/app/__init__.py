@@ -1,3 +1,4 @@
+# app/__init__.py
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -12,8 +13,8 @@ jwt = JWTManager()
 def create_app():
     app = Flask(__name__)
 
-    # Use absolute path for database to avoid path resolution issues
-    basedir = os.path.abspath(os.path.dirname(__file__))
+    # Use absolute path for database in Backend directory
+    basedir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))  # Move up to Backend
     default_db_path = os.path.join(basedir, 'ecommerce.db')
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', f'sqlite:///{default_db_path}')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -50,6 +51,6 @@ def create_app():
         app.register_blueprint(product_bp, url_prefix='/product')
         app.register_blueprint(user_bp, url_prefix='/user')
         db.create_all()
-        print("Registered blueprints:", [rule.endpoint for rule in app.url_map.iter_rules()])  # Debug statement
+        print("Registered blueprints:", [rule.endpoint for rule in app.url_map.iter_rules()])
 
     return app

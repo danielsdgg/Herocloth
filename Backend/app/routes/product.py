@@ -12,7 +12,11 @@ product_bp = Blueprint('product', __name__)
 @cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
 def get_products():
     try:
-        products = Product.query.all()
+        category = request.args.get('category')
+        query = Product.query
+        if category and category != 'all':
+            query = query.filter_by(category=category)
+        products = query.all()
         return jsonify([{
             'id': p.id,
             'name': p.name,
@@ -21,7 +25,8 @@ def get_products():
             'stock': int(p.stock),
             'image1': p.image1,
             'image2': p.image2,
-            'image3': p.image3
+            'image3': p.image3,
+            'category': p.category
         } for p in products]), 200
     except Exception as e:
         current_app.logger.error(f"Error fetching products: {str(e)}")
@@ -43,7 +48,8 @@ def get_product(id):
             'stock': int(product.stock),
             'image1': product.image1,
             'image2': product.image2,
-            'image3': product.image3
+            'image3': product.image3,
+            'category': product.category
         }), 200
     except Exception as e:
         current_app.logger.error(f"Error fetching product {id}: {str(e)}")
@@ -60,15 +66,19 @@ def create_product():
         current_app.logger.warning(f"Admin access denied for user_id: {current_user_id}")
         return jsonify({"msg": "Admin access required"}), 403
     data = request.get_json()
-    if not data.get('name') or not data.get('price') or not data.get('stock') or not data.get('image1'):
+    if not data.get('name') or not data.get('price') or not data.get('stock') or not data.get('image1') or not data.get('category'):
         current_app.logger.warning(f"Missing required fields in create_product: {data}")
-        return jsonify({"msg": "Missing required fields"}), 400
+        return jsonify({"msg": "Missing required fields, including category"}), 400
     if data.get('price') <= 0:
         current_app.logger.warning(f"Invalid price in create_product: {data.get('price')}")
         return jsonify({"msg": "Price must be greater than 0"}), 400
     if data.get('stock') < 0:
         current_app.logger.warning(f"Invalid stock in create_product: {data.get('stock')}")
         return jsonify({"msg": "Stock cannot be negative"}), 400
+    valid_categories = ['tops', 'bottoms', 'dresses', 'outerwear', 'shirts', 'sweaters']
+    if data.get('category') not in valid_categories:
+        current_app.logger.warning(f"Invalid category in create_product: {data.get('category')}")
+        return jsonify({"msg": f"Category must be one of: {', '.join(valid_categories)}"}), 400
     product = Product(
         name=data['name'],
         description=data.get('description', ''),
@@ -76,7 +86,8 @@ def create_product():
         stock=data['stock'],
         image1=data['image1'],
         image2=data.get('image2', ''),
-        image3=data.get('image3', '')
+        image3=data.get('image3', ''),
+        category=data['category']
     )
     try:
         db.session.add(product)
@@ -90,7 +101,8 @@ def create_product():
             'stock': int(product.stock),
             'image1': product.image1,
             'image2': product.image2,
-            'image3': product.image3
+            'image3': product.image3,
+            'category': product.category
         }), 201
     except Exception as e:
         db.session.rollback()
@@ -120,6 +132,9 @@ def update_product(id):
     if 'stock' in data and data['stock'] < 0:
         current_app.logger.warning(f"Invalid stock: {data.get('stock')}")
         return jsonify({"msg": "Stock cannot be negative"}), 400
+    if 'category' in data and data['category'] not in ['tops', 'bottoms', 'dresses', 'outerwear', 'shirts', 'sweaters']:
+        current_app.logger.warning(f"Invalid category: {data.get('category')}")
+        return jsonify({"msg": "Category must be one of: tops, bottoms, dresses, outerwear, shirts, sweaters"}), 400
     product.name = data.get('name', product.name)
     product.description = data.get('description', product.description)
     product.price = data.get('price', product.price)
@@ -127,6 +142,7 @@ def update_product(id):
     product.image1 = data.get('image1', product.image1)
     product.image2 = data.get('image2', product.image2)
     product.image3 = data.get('image3', product.image3)
+    product.category = data.get('category', product.category)
     try:
         db.session.commit()
         current_app.logger.info(f"Product updated: id={id}, name={product.name}")
@@ -138,7 +154,8 @@ def update_product(id):
             'stock': int(product.stock),
             'image1': product.image1,
             'image2': product.image2,
-            'image3': product.image3
+            'image3': product.image3,
+            'category': product.category
         }), 200
     except Exception as e:
         db.session.rollback()
