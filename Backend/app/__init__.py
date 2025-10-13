@@ -1,4 +1,3 @@
-# app/__init__.py
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -21,7 +20,14 @@ def create_app():
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'fc06b4467efe565d9368c0259f61788e')
 
     # Initialize CORS with global configuration
-    CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
+    CORS(app, resources={
+        r"/*": {
+            "origins": ["http://localhost:3000"],
+            "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],  # Add PUT
+            "allow_headers": ["Content-Type", "Authorization"],
+            "supports_credentials": True
+        }
+    })
 
     # Handle OPTIONS requests globally
     @app.before_request
@@ -30,7 +36,7 @@ def create_app():
             response = jsonify({"msg": "CORS preflight successful"})
             response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
             response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
-            response.headers.add("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
+            response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")  # Add PUT
             response.headers.add("Access-Control-Allow-Credentials", "true")
             return response, 200
 
