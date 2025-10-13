@@ -22,7 +22,7 @@ def create_app():
     # Initialize CORS with global configuration
     CORS(app, resources={
         r"/*": {
-            "origins": ["http://localhost:3000"],
+            "origins": ["http://localhost:3000", "https://heroclothline.netlify.app"],
             "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],  # Add PUT
             "allow_headers": ["Content-Type", "Authorization"],
             "supports_credentials": True
