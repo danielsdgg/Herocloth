@@ -23,7 +23,7 @@ export interface CartItem {
   name: string;
   quantity: number;
   price: number;
-  image: string;
+  image1: string;
   stock?: number; // Add stock as optional or required based on backend
 }
 
@@ -31,4 +31,6 @@ export interface LoginResponse {
   access_token: string;
   refresh_token: string;
   role: string;
+  username: string;
+  userId: number;
 }

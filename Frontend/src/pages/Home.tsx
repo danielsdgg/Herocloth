@@ -44,11 +44,23 @@ const Home = () => {
         }));
         setProducts(productsWithCategories || []);
         setFilteredProducts(productsWithCategories || []);
-      } catch (error: any) {
-        const message =
-          error.code === "ERR_NETWORK"
-            ? "Cannot connect to server. Please ensure the backend is running."
-            : error.response?.data?.msg || "Failed to fetch products.";
+      } catch (error: unknown) {
+        let message = "Failed to fetch products.";
+        if (
+          typeof error === "object" &&
+          error !== null &&
+          "code" in error &&
+          (error as { code?: string }).code === "ERR_NETWORK"
+        ) {
+          message = "Cannot connect to server. Please ensure the backend is running.";
+        } else if (
+          typeof error === "object" &&
+          error !== null &&
+          "response" in error &&
+          (error as { response?: { data?: { msg?: string } } }).response?.data?.msg
+        ) {
+          message = (error as { response?: { data?: { msg?: string } } }).response?.data?.msg || message;
+        }
         toast.error(message);
       }
     };

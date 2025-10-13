@@ -1,13 +1,11 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { toast } from "react-toastify";
-import { AxiosError } from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import createApiInstance from "../utils/api";
 import { type Product } from "../types";
 import { useAuth } from "../components/useAuth";
 import Navbar from "../components/Navbar";
 
-// Define User interface
 interface User {
   id: number;
   username: string;
@@ -42,11 +40,11 @@ const AdminDashboard = () => {
       setError(null);
       try {
         const api = createApiInstance(token);
-        const response = await api.get("/product/", { withCredentials: true });
+        const response = await api.get<Product[]>("/product/", { withCredentials: true });
         setProducts(response.data);
-      } catch (error) {
+      } catch (error: unknown) {
         const message =
-          (error as AxiosError<{ msg: string }>).response?.data?.msg ||
+          (error as { response?: { data?: { msg: string } } }).response?.data?.msg ||
           "Failed to fetch products.";
         setError(message);
         toast.error(message);
@@ -64,11 +62,11 @@ const AdminDashboard = () => {
       setError(null);
       try {
         const api = createApiInstance(token);
-        const response = await api.get("/user/all", { withCredentials: true });
+        const response = await api.get<User[]>("/user/all", { withCredentials: true });
         setUsers(response.data);
-      } catch (error) {
+      } catch (error: unknown) {
         const message =
-          (error as AxiosError<{ msg: string }>).response?.data?.msg ||
+          (error as { response?: { data?: { msg: string } } }).response?.data?.msg ||
           "Failed to fetch users.";
         setError(message);
         toast.error(message);
@@ -92,8 +90,8 @@ const AdminDashboard = () => {
   // Validate product inputs
   const validateProduct = useCallback((product: Partial<Product>) => {
     if (!product.name || product.name.trim() === "") return "Product name is required.";
-    if (product.price <= 0) return "Price must be greater than 0.";
-    if (product.stock < 0) return "Stock cannot be negative.";
+    if (product.price! <= 0) return "Price must be greater than 0.";
+    if (product.stock! < 0) return "Stock cannot be negative.";
     if (!product.image1 || product.image1.trim() === "") return "At least one image URL is required.";
     if (!product.category || product.category.trim() === "") return "Category is required.";
     const validCategories = ["tops", "bottoms", "dresses", "outerwear", "shirts", "sweaters"];
@@ -112,7 +110,7 @@ const AdminDashboard = () => {
     setError(null);
     try {
       const api = createApiInstance(token);
-      const response = await api.post("/product/", newProduct, { withCredentials: true });
+      const response = await api.post<Product>("/product/", newProduct, { withCredentials: true });
       setProducts([...products, response.data]);
       setNewProduct({
         name: "",
@@ -125,16 +123,16 @@ const AdminDashboard = () => {
         category: "",
       });
       toast.success("Product created successfully!");
-    } catch (error) {
+    } catch (error: unknown) {
       const message =
-        (error as AxiosError<{ msg: string }>).response?.data?.msg ||
+        (error as { response?: { data?: { msg: string } } }).response?.data?.msg ||
         "Failed to create product.";
       setError(message);
       toast.error(message);
     } finally {
       setIsLoading(false);
     }
-  }, [newProduct, products, token]);
+  }, [newProduct, products, token, validateProduct]);
 
   // Update a product
   const handleUpdate = useCallback(async () => {
@@ -158,20 +156,20 @@ const AdminDashboard = () => {
         image3: editProduct.image3,
         category: editProduct.category,
       };
-      const response = await api.put(`/product/${editProduct.id}`, updatePayload, { withCredentials: true });
+      const response = await api.put<Product>(`/product/${editProduct.id}`, updatePayload, { withCredentials: true });
       setProducts(products.map((p) => (p.id === editProduct.id ? response.data : p)));
       setEditProduct(null);
       toast.success("Product updated successfully!");
-    } catch (error) {
+    } catch (error: unknown) {
       const message =
-        (error as AxiosError<{ msg: string }>).response?.data?.msg ||
+        (error as { response?: { data?: { msg: string } } }).response?.data?.msg ||
         "Failed to update product.";
       setError(message);
       toast.error(message);
     } finally {
       setIsLoading(false);
     }
-  }, [editProduct, products, token]);
+  }, [editProduct, products, token, validateProduct]);
 
   // Delete a product
   const handleDelete = useCallback(
@@ -184,9 +182,9 @@ const AdminDashboard = () => {
         await api.delete(`/product/${id}`, { withCredentials: true });
         setProducts(products.filter((p) => p.id !== id));
         toast.success("Product deleted successfully!");
-      } catch (error) {
+      } catch (error: unknown) {
         const message =
-          (error as AxiosError<{ msg: string }>).response?.data?.msg ||
+          (error as { response?: { data?: { msg: string } } }).response?.data?.msg ||
           "Failed to delete product.";
         setError(message);
         toast.error(message);
@@ -208,16 +206,16 @@ const AdminDashboard = () => {
     setError(null);
     try {
       const api = createApiInstance(token);
-      const response = await api.put(`/user/${editUser.id}`, { role: editUser.role }, { withCredentials: true });
+      const response = await api.put<User>(`/user/${editUser.id}`, { role: editUser.role }, { withCredentials: true });
       setUsers(users.map((u) => (u.id === editUser.id ? response.data : u)));
       if (editUser.id === userId) {
-        setAuth({ username: response.data.username, role: response.data.role });
+        setAuth(token!, "", response.data.role, response.data.username, response.data.id);
       }
       setEditUser(null);
       toast.success("User role updated successfully!");
-    } catch (error) {
+    } catch (error: unknown) {
       const message =
-        (error as AxiosError<{ msg: string }>).response?.data?.msg ||
+        (error as { response?: { data?: { msg: string } } }).response?.data?.msg ||
         "Failed to update user role.";
       setError(message);
       toast.error(message);
@@ -241,9 +239,9 @@ const AdminDashboard = () => {
         await api.delete(`/user/${id}`, { withCredentials: true });
         setUsers(users.filter((u) => u.id !== id));
         toast.success("User deleted successfully!");
-      } catch (error) {
+      } catch (error: unknown) {
         const message =
-          (error as AxiosError<{ msg: string }>).response?.data?.msg ||
+          (error as { response?: { data?: { msg: string } } }).response?.data?.msg ||
           "Failed to delete user.";
         setError(message);
         toast.error(message);
