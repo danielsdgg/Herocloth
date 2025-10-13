@@ -52,7 +52,7 @@ const ProductDetails = () => {
       await addToCart(product.id, quantity);
       toast.success(`${product.name} added to cart!`);
       navigate(ROUTES.CART);
-    } catch (error) {
+    } catch {
       toast.error("Failed to add item to cart.");
     }
   }, [product, quantity, addToCart, navigate]);

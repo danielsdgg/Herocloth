@@ -17,7 +17,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const handleAddToCart = useCallback(async () => {
     try {
       await addToCart(product.id, 1);
-    } catch (error) {
+    } catch {
       // Error handled in CartContext
     }
   }, [addToCart, product.id]);
