@@ -19,11 +19,12 @@ export interface Product {
 
 export interface CartItem {
   id: number;
-  product_id: number;
-  product_name: string;
+  productId: number;
+  name: string;
   quantity: number;
   price: number;
-  image1: string; // Added image1
+  image: string;
+  stock?: number; // Add stock as optional or required based on backend
 }
 
 export interface LoginResponse {
