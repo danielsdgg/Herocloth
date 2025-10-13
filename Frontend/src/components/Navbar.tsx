@@ -1,6 +1,6 @@
-import { useState, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { FaHome, FaShoppingCart, FaUser } from "react-icons/fa";
+import { useState, useCallback, useMemo } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { FaHome, FaShoppingCart, FaUser, FaEnvelope } from "react-icons/fa";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "./useAuth";
@@ -8,6 +8,7 @@ import { useAuth } from "./useAuth";
 const ROUTES = {
   HOME: "/",
   CART: "/cart",
+  CONTACT: "/contact",
   LOGIN: "/login",
   REGISTER: "/register",
   PROFILE: "/profile",
@@ -18,6 +19,7 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { token, role, clearAuth } = useAuth();
 
   const handleLogout = useCallback(() => {
@@ -29,30 +31,38 @@ const Navbar = () => {
 
   const toggleMobileMenu = useCallback(() => {
     setIsOpen((prev) => !prev);
-    setIsAccountOpen(false); // Close account dropdown when toggling mobile menu
+    setIsAccountOpen(false);
   }, []);
 
   const toggleAccountDropdown = useCallback(() => {
     setIsAccountOpen((prev) => !prev);
   }, []);
 
-  const navItems = [
-    { to: ROUTES.HOME, label: "Home", icon: <FaHome className="w-5 h-5 mr-2" /> },
-    { to: ROUTES.CART, label: "Cart", icon: <FaShoppingCart className="w-5 h-5 mr-2" /> },
-  ];
+  const navItems = useMemo(
+    () => [
+      { to: ROUTES.HOME, label: "Home", icon: <FaHome className="w-5 h-5 mr-2" /> },
+      { to: ROUTES.CART, label: "Cart", icon: <FaShoppingCart className="w-5 h-5 mr-2" /> },
+      { to: ROUTES.CONTACT, label: "Contact", icon: <FaEnvelope className="w-5 h-5 mr-2" /> },
+    ],
+    []
+  );
 
-  const accountItems = token
-    ? [
-        { to: ROUTES.PROFILE, label: "Profile", icon: <FaUser className="w-4 h-4 mr-2" /> },
-        ...(role === "admin"
-          ? [{ to: ROUTES.DASHBOARD, label: "Dashboard", icon: null }]
-          : []),
-        { label: "Logout", action: handleLogout, icon: null },
-      ]
-    : [
-        { to: ROUTES.LOGIN, label: "Login", icon: null },
-        { to: ROUTES.REGISTER, label: "Sign Up", icon: null },
-      ];
+  const accountItems = useMemo(
+    () =>
+      token
+        ? [
+            { to: ROUTES.PROFILE, label: "Profile", icon: <FaUser className="w-4 h-4 mr-2" /> },
+            ...(role === "admin"
+              ? [{ to: ROUTES.DASHBOARD, label: "Dashboard", icon: null }]
+              : []),
+            { label: "Logout", action: handleLogout, icon: null },
+          ]
+        : [
+            { to: ROUTES.LOGIN, label: "Login", icon: null },
+            { to: ROUTES.REGISTER, label: "Sign Up", icon: null },
+          ],
+    [token, role, handleLogout]
+  );
 
   return (
     <nav className="bg-slate-950 text-slate-100 sticky top-0 z-50 shadow-lg shadow-black/40">
@@ -63,7 +73,7 @@ const Navbar = () => {
             <Link to={ROUTES.HOME} className="flex items-center group">
               <motion.div
                 className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-indigo-500 shadow-lg shadow-cyan-500/20"
-                whileHover={{ scale: 1.1 }}
+                whileHover={{ scale: 1.1, rotate: 5 }}
                 transition={{ duration: 0.2 }}
               >
                 <svg
@@ -86,8 +96,13 @@ const Navbar = () => {
               <Link
                 key={item.label}
                 to={item.to}
-                className="flex items-center px-3 py-2 text-sm font-medium text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50 rounded-lg transition-all duration-200"
+                className={`flex items-center px-3 py-2 text-sm font-medium transition-all duration-200 rounded-lg ${
+                  pathname === item.to
+                    ? "text-cyan-300 bg-slate-800/50"
+                    : "text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50"
+                }`}
                 aria-label={item.label}
+                aria-current={pathname === item.to ? "page" : undefined}
               >
                 {item.icon}
                 {item.label}
@@ -97,7 +112,7 @@ const Navbar = () => {
             <div className="relative">
               <button
                 onClick={toggleAccountDropdown}
-                className="flex items-center px-3 py-2 text-sm font-medium text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50 rounded-lg transition-all duration-200"
+                className="flex items-center px-3 py-2 text-sm font-medium text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
                 aria-label="Account menu"
                 aria-expanded={isAccountOpen}
               >
@@ -118,7 +133,7 @@ const Navbar = () => {
                         <button
                           key={item.label}
                           onClick={item.action}
-                          className="flex items-center w-full px-4 py-2 text-sm text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50 transition-all duration-200"
+                          className="flex items-center w-full px-4 py-2 text-sm text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
                           aria-label={item.label}
                         >
                           {item.icon}
@@ -128,9 +143,14 @@ const Navbar = () => {
                         <Link
                           key={item.label}
                           to={item.to}
-                          className="flex items-center w-full px-4 py-2 text-sm text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50 transition-all duration-200"
+                          className={`flex items-center w-full px-4 py-2 text-sm transition-all duration-200 ${
+                            pathname === item.to
+                              ? "text-cyan-300 bg-slate-800/50"
+                              : "text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50"
+                          }`}
                           onClick={() => setIsAccountOpen(false)}
                           aria-label={item.label}
+                          aria-current={pathname === item.to ? "page" : undefined}
                         >
                           {item.icon}
                           {item.label}
@@ -147,7 +167,7 @@ const Navbar = () => {
           <div className="md:hidden flex items-center">
             <button
               onClick={toggleMobileMenu}
-              className="p-2 text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50 rounded-lg transition-all duration-200"
+              className="p-2 text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
               aria-label={isOpen ? "Close menu" : "Open menu"}
             >
               {isOpen ? (
@@ -170,24 +190,29 @@ const Navbar = () => {
             transition={{ duration: 0.3 }}
             className="md:hidden overflow-hidden bg-slate-900/70 backdrop-blur supports-[backdrop-filter]:bg-slate-900/60 shadow-lg"
           >
-            <div className="px-4 pt-2 pb-4 space-y-2">
+            <div className="px-6 py-4 space-y-3">
               {navItems.map((item) => (
                 <Link
                   key={item.label}
                   to={item.to}
-                  className="flex items-center w-full px-4 py-2 text-base font-medium text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50 rounded-lg transition-all duration-200"
+                  className={`flex items-center w-full px-4 py-3 text-base font-medium transition-all duration-200 rounded-lg ${
+                    pathname === item.to
+                      ? "text-cyan-300 bg-slate-800/50"
+                      : "text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50"
+                  }`}
                   onClick={() => setIsOpen(false)}
                   aria-label={item.label}
+                  aria-current={pathname === item.to ? "page" : undefined}
                 >
                   {item.icon}
                   {item.label}
                 </Link>
               ))}
               {/* Mobile Account Menu */}
-              <div className="pt-2 border-t border-white/10">
+              <div className="pt-3 border-t border-white/10">
                 <button
                   onClick={toggleAccountDropdown}
-                  className="flex items-center w-full px-4 py-2 text-base font-medium text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50 rounded-lg transition-all duration-200"
+                  className="flex items-center w-full px-4 py-3 text-base font-medium text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
                   aria-label="Account menu"
                   aria-expanded={isAccountOpen}
                 >
@@ -201,14 +226,14 @@ const Navbar = () => {
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.2 }}
-                      className="pl-4 space-y-2"
+                      className="pl-4 space-y-2 mt-2"
                     >
                       {accountItems.map((item) =>
                         item.action ? (
                           <button
                             key={item.label}
                             onClick={item.action}
-                            className="flex items-center w-full px-4 py-2 text-sm text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50 rounded-lg transition-all duration-200"
+                            className="flex items-center w-full px-4 py-2 text-sm text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
                             aria-label={item.label}
                           >
                             {item.icon}
@@ -218,12 +243,17 @@ const Navbar = () => {
                           <Link
                             key={item.label}
                             to={item.to}
-                            className="flex items-center w-full px-4 py-2 text-sm text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50 rounded-lg transition-all duration-200"
+                            className={`flex items-center w-full px-4 py-2 text-sm transition-all duration-200 ${
+                              pathname === item.to
+                                ? "text-cyan-300 bg-slate-800/50"
+                                : "text-slate-100 hover:text-cyan-300 hover:bg-slate-800/50"
+                            }`}
                             onClick={() => {
                               setIsOpen(false);
                               setIsAccountOpen(false);
                             }}
                             aria-label={item.label}
+                            aria-current={pathname === item.to ? "page" : undefined}
                           >
                             {item.icon}
                             {item.label}

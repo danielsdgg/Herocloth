@@ -1,70 +1,78 @@
-// src/components/Profile.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { toast } from "react-toastify";
 import { AxiosError } from "axios";
+import { motion, AnimatePresence } from "framer-motion";
 import createApiInstance from "../utils/api";
 import { type User } from "../types";
 import { useAuth } from "../components/useAuth";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { motion } from "framer-motion";
 
 const Profile = () => {
+  const { token, setAuth } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [editUser, setEditUser] = useState<Partial<User & { password?: string }> | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const { token, logout } = useAuth();
 
   // Fetch user profile
   useEffect(() => {
     const fetchProfile = async () => {
+      if (!token) return;
       setIsLoading(true);
       setError(null);
       setSuccess(null);
       try {
         const api = createApiInstance(token);
-        const response = await api.get("/user/profile", { withCredentials: true });
+        const response = await api.get<User>("/user/profile", { withCredentials: true });
         setUser(response.data);
       } catch (error: unknown) {
-        const message = error instanceof AxiosError && error.response?.data?.msg
-          ? error.response.data.msg
-          : "Failed to fetch profile.";
+        const message =
+          error instanceof AxiosError && error.response?.data?.msg
+            ? error.response.data.msg
+            : "Failed to fetch profile.";
         setError(message);
+        toast.error(message);
       } finally {
         setIsLoading(false);
       }
     };
-    if (token) fetchProfile();
+    fetchProfile();
   }, [token]);
 
   // Validate form inputs
-  const validateUser = (userData: Partial<User & { password?: string }>) => {
-    if (userData.username && (userData.username.trim() === "" || !isNaN(Number(userData.username))))
-      return "Username must be a non-empty string.";
-    if (userData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userData.email))
-      return "Valid email is required.";
-    if (userData.password && userData.password.length < 6)
-      return "Password must be at least 6 characters.";
-    return null;
-  };
+  const validateUser = useCallback(
+    (userData: Partial<User & { password?: string }>) => {
+      if (userData.username && (userData.username.trim() === "" || !isNaN(Number(userData.username))))
+        return "Username must be a non-empty string.";
+      if (userData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userData.email))
+        return "Valid email is required.";
+      if (userData.password && userData.password.length < 6)
+        return "Password must be at least 6 characters.";
+      return null;
+    },
+    []
+  );
 
-  const handleEdit = () => {
+  // Handle edit button click
+  const handleEdit = useCallback(() => {
     if (user) {
       setEditUser({ username: user.username, email: user.email, password: "" });
       setError(null);
       setSuccess(null);
     }
-  };
+  }, [user]);
 
-  const handleSave = async () => {
+  // Handle profile save
+  const handleSave = useCallback(async () => {
     if (!editUser) return;
     const validationError = validateUser(editUser);
     if (validationError) {
       setError(validationError);
+      toast.error(validationError);
       return;
     }
-    // Only include fields that have changed or are non-empty
     const payload: Partial<User & { password?: string }> = {};
     if (editUser.username && editUser.username !== user?.username) {
       payload.username = editUser.username;
@@ -77,6 +85,7 @@ const Profile = () => {
     }
     if (Object.keys(payload).length === 0) {
       setError("No changes provided.");
+      toast.info("No changes provided.");
       return;
     }
     setIsLoading(true);
@@ -84,192 +93,240 @@ const Profile = () => {
     setSuccess(null);
     try {
       const api = createApiInstance(token);
-      const response = await api.put("/user/profile", payload, { withCredentials: true });
+      const response = await api.put<User>("/user/profile", payload, { withCredentials: true });
       setUser(response.data);
+      setAuth({ username: response.data.username }); // Update auth context
       setEditUser(null);
       setSuccess("Profile updated successfully!");
+      toast.success("Profile updated successfully!");
     } catch (error: unknown) {
-      const message = error instanceof AxiosError && error.response?.data?.msg
-        ? error.response.data.msg
-        : "Failed to update profile.";
+      const message =
+        error instanceof AxiosError && error.response?.data?.msg
+          ? error.response.data.msg
+          : "Failed to update profile.";
       setError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleLogout = () => {
-    if (window.confirm("Are you sure you want to log out?")) {
-      logout();
-    }
-  };
+  }, [editUser, user, token, setAuth]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-cyan-50">
-      {/* Navbar */}
+    <>
       <Navbar />
+      <div className="min-h-screen bg-slate-950 text-slate-100">
+        {/* Ambient gradient glows */}
+        <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+          <div className="absolute -top-20 -left-24 h-80 w-80 rounded-full bg-cyan-500/20 blur-3xl" />
+          <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-indigo-500/20 blur-3xl" />
+        </div>
 
-      {/* Main Content */}
-      <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {isLoading && (
-          <div className="flex justify-center items-center min-h-[200px]">
-            <div className="text-slate-600 text-lg font-medium animate-pulse">
-              Loading...
-            </div>
-          </div>
-        )}
-
-        {!isLoading && (error || !user) && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex justify-center"
-          >
-            <div className="bg-red-100 text-red-700 px-6 py-4 rounded-lg shadow-md max-w-lg w-full text-center font-medium">
-              {error || "Failed to load profile."}
-            </div>
-          </motion.div>
-        )}
-
-        {!isLoading && user && (
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="bg-white rounded-2xl shadow-lg p-8 border border-slate-300"
-          >
-            {/* Header */}
-            <div className="text-center mb-10">
-              <h1 className="text-4xl font-extrabold text-slate-900">
+        <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          {/* Header */}
+          <header className="mb-12 text-center">
+            <div className="relative inline-block">
+              <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-500 animate-fade-in">
                 Your Profile
               </h1>
-              <p className="text-slate-600 mt-2">
-                Manage and update your account details
-              </p>
+              <motion.div
+                className="absolute -bottom-2 left-10 h-1 w-24 rounded bg-gradient-to-r from-cyan-400 to-indigo-500"
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              />
             </div>
+            <p className="text-lg text-slate-300 mt-3 max-w-2xl mx-auto animate-fade-in">
+              Personalize your shopping experience by updating your account details.
+            </p>
+          </header>
 
-            {success && (
+          {/* Error Message */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              role="alert"
+              aria-live="assertive"
+              className="mb-8 rounded-lg bg-rose-500/10 px-6 py-4 text-sm text-rose-300 text-center shadow-md shadow-black/20"
+            >
+              {error}
+            </motion.div>
+          )}
+
+          {/* Success Message */}
+          {success && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              role="status"
+              aria-live="polite"
+              className="mb-8 rounded-lg bg-green-500/10 px-6 py-4 text-sm text-green-300 text-center shadow-md shadow-black/20"
+            >
+              {success}
+            </motion.div>
+          )}
+
+          {/* Loading State */}
+          {isLoading && (
+            <div className="flex justify-center items-center min-h-[200px]">
+              <div
+                className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-cyan-400 border-t-transparent"
+                role="status"
+                aria-label="Loading profile"
+              ></div>
+              <p className="text-slate-400 font-medium ml-4">Loading your profile...</p>
+            </div>
+          )}
+
+          {/* Profile Details */}
+          {!isLoading && user && (
+            <motion.section
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="relative bg-slate-900/70 backdrop-blur-lg rounded-2xl p-8 shadow-xl shadow-black/30 max-w-lg mx-auto"
+            >
+              <div className="flex flex-col items-center">
+                <motion.div
+                  className="relative w-20 h-20 rounded-full bg-gradient-to-br from-cyan-400 to-indigo-500 flex items-center justify-center mb-6"
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <span className="text-2xl font-bold text-white">
+                    {user.username.charAt(0).toUpperCase()}
+                  </span>
+                  <motion.div
+                    className="absolute inset-0 rounded-full border-2 border-transparent bg-gradient-to-r from-cyan-400 to-indigo-500 opacity-50"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                  />
+                </motion.div>
+                <h2 className="text-2xl font-semibold text-slate-100">{user.username}</h2>
+                <p className="text-slate-300 text-sm mt-1">{user.email}</p>
+                <p className="text-sm text-slate-400 mt-1 capitalize">Role: {user.role}</p>
+                <button
+                  onClick={handleEdit}
+                  className="group mt-8 relative inline-flex items-center justify-center overflow-hidden rounded-xl bg-gradient-to-r from-cyan-500 via-sky-500 to-indigo-500 px-6 py-3 font-medium text-white shadow-lg shadow-cyan-500/20 transition-all duration-200 hover:from-cyan-400 hover:via-sky-400 hover:to-indigo-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 hover:scale-105"
+                  aria-label="Edit profile"
+                >
+                  <span className="absolute inset-0 -z-10 opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-30 bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-indigo-500" />
+                  Edit Profile
+                </button>
+              </div>
+            </motion.section>
+          )}
+
+          {/* Edit Profile Modal */}
+          <AnimatePresence>
+            {editUser && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="bg-green-100 text-green-700 px-6 py-4 rounded-lg shadow-md mb-6 text-center font-medium"
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Edit profile modal"
               >
-                {success}
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="bg-slate-900/70 backdrop-blur-lg rounded-2xl p-8 w-full max-w-md shadow-xl shadow-black/30"
+                >
+                  <h2 className="text-2xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-500 mb-6">
+                    Edit Profile
+                  </h2>
+                  <div className="grid grid-cols-1 gap-6">
+                    <div>
+                      <label
+                        htmlFor="username"
+                        className="block text-sm font-medium text-slate-300 mb-2"
+                      >
+                        Username
+                      </label>
+                      <input
+                        id="username"
+                        type="text"
+                        placeholder="Enter username"
+                        value={editUser.username || ""}
+                        onChange={(e) =>
+                          setEditUser({ ...editUser, username: e.target.value })
+                        }
+                        className="w-full rounded-lg bg-slate-800/70 border border-white/10 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
+                        aria-label="Username"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="email"
+                        className="block text-sm font-medium text-slate-300 mb-2"
+                      >
+                        Email
+                      </label>
+                      <input
+                        id="email"
+                        type="email"
+                        placeholder="Enter email"
+                        value={editUser.email || ""}
+                        onChange={(e) =>
+                          setEditUser({ ...editUser, email: e.target.value })
+                        }
+                        className="w-full rounded-lg bg-slate-800/70 border border-white/10 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
+                        aria-label="Email"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="password"
+                        className="block text-sm font-medium text-slate-300 mb-2"
+                      >
+                        Password
+                      </label>
+                      <input
+                        id="password"
+                        type="password"
+                        placeholder="Enter new password (optional)"
+                        value={editUser.password || ""}
+                        onChange={(e) =>
+                          setEditUser({ ...editUser, password: e.target.value })
+                        }
+                        className="w-full rounded-lg bg-slate-800/70 border border-white/10 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
+                        aria-label="New password"
+                      />
+                      <p className="text-sm text-slate-400 mt-1">
+                        Minimum 6 characters (leave blank to keep current)
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-8 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                    <button
+                      onClick={handleSave}
+                      disabled={isLoading}
+                      className="group flex-1 relative inline-flex items-center justify-center overflow-hidden rounded-xl bg-gradient-to-r from-cyan-500 via-sky-500 to-indigo-500 px-6 py-3 font-medium text-white shadow-lg shadow-cyan-500/20 transition-all duration-200 hover:from-cyan-400 hover:via-sky-400 hover:to-indigo-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
+                      aria-label="Save profile changes"
+                    >
+                      <span className="absolute inset-0 -z-10 opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-30 bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-indigo-500" />
+                      {isLoading ? "Saving..." : "Save Changes"}
+                    </button>
+                    <button
+                      onClick={() => setEditUser(null)}
+                      className="flex-1 rounded-xl bg-slate-800/70 border border-white/10 px-6 py-3 text-slate-100 font-medium hover:bg-slate-800/90 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all duration-200 hover:scale-105"
+                      aria-label="Cancel edit"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </motion.div>
               </motion.div>
             )}
-
-            {!editUser ? (
-              // View Mode
-              <div className="flex flex-col items-center">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-400 to-indigo-500 flex items-center justify-center shadow-md mb-6">
-                  <span className="text-3xl font-bold text-white">
-                    {user.username.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <h2 className="text-2xl font-semibold text-slate-900">
-                  {user.username}
-                </h2>
-                <p className="text-slate-600">{user.email}</p>
-                <p className="text-sm text-slate-500 mt-1 capitalize">
-                  Role: {user.role}
-                </p>
-
-                <div className="mt-8 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full max-w-sm">
-                  <button
-                    onClick={handleEdit}
-                    className="flex-1 bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition"
-                  >
-                    Edit Profile
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="flex-1 bg-red-500 text-white py-3 rounded-lg font-semibold hover:bg-red-600 transition"
-                  >
-                    Log Out
-                  </button>
-                </div>
-              </div>
-            ) : (
-              // Edit Mode
-              <div>
-                <h2 className="text-2xl font-semibold text-slate-900 mb-6">
-                  Edit Profile
-                </h2>
-                <div className="grid grid-cols-1 gap-5">
-                  <div>
-                    <label className="block text-slate-700 font-medium mb-1">
-                      Username
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter username"
-                      value={editUser.username || ""}
-                      onChange={(e) =>
-                        setEditUser({ ...editUser, username: e.target.value })
-                      }
-                      className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-cyan-50 text-slate-900"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-700 font-medium mb-1">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      placeholder="Enter email"
-                      value={editUser.email || ""}
-                      onChange={(e) =>
-                        setEditUser({ ...editUser, email: e.target.value })
-                      }
-                      className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-cyan-50 text-slate-900"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-700 font-medium mb-1">
-                      Password
-                    </label>
-                    <input
-                      type="password"
-                      placeholder="Enter new password"
-                      value={editUser.password || ""}
-                      onChange={(e) =>
-                        setEditUser({ ...editUser, password: e.target.value })
-                      }
-                      className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-cyan-50 text-slate-900"
-                    />
-                    <p className="text-sm text-slate-500 mt-1">
-                      Minimum 6 characters (leave blank to keep current)
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-8 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                  <button
-                    onClick={handleSave}
-                    disabled={isLoading}
-                    className={`flex-1 bg-indigo-600 text-white py-3 rounded-lg font-semibold transition ${
-                      isLoading
-                        ? "opacity-50 cursor-not-allowed"
-                        : "hover:bg-indigo-700"
-                    }`}
-                  >
-                    Save Changes
-                  </button>
-                  <button
-                    onClick={() => setEditUser(null)}
-                    className="flex-1 bg-gray-300 text-slate-900 py-3 rounded-lg font-semibold hover:bg-gray-400 transition"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </main>
-
-      {/* Footer */}
-      <Footer />
-    </div>
+          </AnimatePresence>
+        </main>
+        <Footer />
+      </div>
+    </>
   );
 };
 

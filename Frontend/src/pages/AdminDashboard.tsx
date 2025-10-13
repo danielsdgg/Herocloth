@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { AxiosError } from "axios";
 import { toast } from "react-toastify";
 import createApiInstance from "../utils/api";
@@ -6,8 +6,18 @@ import { type Product } from "../types";
 import { useAuth } from "../components/useAuth";
 import Navbar from "../components/Navbar";
 
+// Define User interface
+interface User {
+  id: number;
+  username: string;
+  email: string;
+  role: "user" | "admin";
+}
+
 const AdminDashboard = () => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [userSearch, setUserSearch] = useState("");
   const [newProduct, setNewProduct] = useState({
     name: "",
     description: "",
@@ -16,11 +26,13 @@ const AdminDashboard = () => {
     image1: "",
     image2: "",
     image3: "",
+    category: "",
   });
   const [editProduct, setEditProduct] = useState<Product | null>(null);
+  const [editUser, setEditUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { token } = useAuth();
+  const { token, username, userId } = useAuth();
 
   // Fetch all products
   useEffect(() => {
@@ -44,12 +56,47 @@ const AdminDashboard = () => {
     if (token) fetchProducts();
   }, [token]);
 
-  // Validate form inputs
+  // Fetch all users
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const api = createApiInstance(token);
+        const response = await api.get("/user/all");
+        setUsers(response.data);
+      } catch (error) {
+        const message =
+          (error as AxiosError<{ msg: string }>).response?.data?.msg ||
+          "Failed to fetch users.";
+        setError(message);
+        toast.error(message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    if (token) fetchUsers();
+  }, [token]);
+
+  // Filter users based on search
+  const filteredUsers = useMemo(() => {
+    const lowerSearch = userSearch.toLowerCase();
+    return users.filter(
+      (user) =>
+        user.username.toLowerCase().includes(lowerSearch) ||
+        user.email.toLowerCase().includes(lowerSearch)
+    );
+  }, [users, userSearch]);
+
+  // Validate product inputs
   const validateProduct = useCallback((product: Partial<Product>) => {
     if (!product.name || product.name.trim() === "") return "Product name is required.";
     if (product.price <= 0) return "Price must be greater than 0.";
     if (product.stock < 0) return "Stock cannot be negative.";
     if (!product.image1 || product.image1.trim() === "") return "At least one image URL is required.";
+    if (!product.category || product.category.trim() === "") return "Category is required.";
+    const validCategories = ['tops', 'bottoms', 'dresses', 'outerwear', 'shirts', 'sweaters'];
+    if (!validCategories.includes(product.category)) return `Category must be one of: ${validCategories.join(', ')}`;
     return null;
   }, []);
 
@@ -64,14 +111,25 @@ const AdminDashboard = () => {
     setError(null);
     try {
       const api = createApiInstance(token);
+      console.log("Create Payload:", newProduct);
       const response = await api.post("/product/", newProduct);
       setProducts([...products, response.data]);
-      setNewProduct({ name: "", description: "", price: 0, stock: 0, image1: "", image2: "", image3: "" });
+      setNewProduct({
+        name: "",
+        description: "",
+        price: 0,
+        stock: 0,
+        image1: "",
+        image2: "",
+        image3: "",
+        category: "",
+      });
       toast.success("Product created successfully!");
     } catch (error) {
       const message =
         (error as AxiosError<{ msg: string }>).response?.data?.msg ||
         "Failed to create product.";
+      console.error("Create Error:", error);
       setError(message);
       toast.error(message);
     } finally {
@@ -91,7 +149,19 @@ const AdminDashboard = () => {
     setError(null);
     try {
       const api = createApiInstance(token);
-      const response = await api.put(`/product/${editProduct.id}`, editProduct);
+      console.log("Token:", token);
+      const updatePayload = {
+        name: editProduct.name,
+        description: editProduct.description,
+        price: editProduct.price,
+        stock: editProduct.stock,
+        image1: editProduct.image1,
+        image2: editProduct.image2,
+        image3: editProduct.image3,
+        category: editProduct.category,
+      };
+      console.log("Update Payload:", updatePayload);
+      const response = await api.put(`/product/${editProduct.id}`, updatePayload);
       setProducts(products.map((p) => (p.id === editProduct.id ? response.data : p)));
       setEditProduct(null);
       toast.success("Product updated successfully!");
@@ -99,6 +169,7 @@ const AdminDashboard = () => {
       const message =
         (error as AxiosError<{ msg: string }>).response?.data?.msg ||
         "Failed to update product.";
+      console.error("Update Error:", error);
       setError(message);
       toast.error(message);
     } finally {
@@ -130,6 +201,63 @@ const AdminDashboard = () => {
     [products, token]
   );
 
+  // Update user role
+  const handleUpdateUserRole = useCallback(async () => {
+    if (!editUser) return;
+    if (!editUser.role) {
+      toast.error("Role is required.");
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+    try {
+      const api = createApiInstance(token);
+      console.log("Update User Payload:", { role: editUser.role });
+      const response = await api.put(`/user/${editUser.id}`, { role: editUser.role });
+      setUsers(users.map((u) => (u.id === editUser.id ? response.data : u)));
+      setEditUser(null);
+      toast.success("User role updated successfully!");
+    } catch (error) {
+      const message =
+        (error as AxiosError<{ msg: string }>).response?.data?.msg ||
+        "Failed to update user role.";
+      console.error("Update User Error:", error);
+      setError(message);
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [editUser, users, token]);
+
+  // Delete a user
+  const handleDeleteUser = useCallback(
+    async (id: number) => {
+      if (id === userId) {
+        toast.error("Cannot delete your own admin account.");
+        return;
+      }
+      if (!window.confirm("Are you sure you want to delete this user?")) return;
+      setIsLoading(true);
+      setError(null);
+      try {
+        const api = createApiInstance(token);
+        await api.delete(`/user/${id}`);
+        setUsers(users.filter((u) => u.id !== id));
+        toast.success("User deleted successfully!");
+      } catch (error) {
+        const message =
+          (error as AxiosError<{ msg: string }>).response?.data?.msg ||
+          "Failed to delete user.";
+        console.error("Delete User Error:", error);
+        setError(message);
+        toast.error(message);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [users, token, userId]
+  );
+
   return (
     <>
       <Navbar />
@@ -150,7 +278,7 @@ const AdminDashboard = () => {
               <div className="absolute -bottom-2 left-0 h-1 w-32 rounded bg-gradient-to-r from-cyan-400 via-sky-400 to-indigo-400 opacity-50 animate-pulse" />
             </div>
             <p className="text-lg text-slate-300 mt-3 max-w-2xl animate-fade-in">
-              Manage your e-commerce products with ease and efficiency.
+              Welcome, {username || "Admin"}! Manage your e-commerce platform with ease and efficiency.
             </p>
           </header>
 
@@ -170,9 +298,9 @@ const AdminDashboard = () => {
               <div
                 className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-cyan-400 border-t-transparent"
                 role="status"
-                aria-label="Loading products"
+                aria-label="Loading data"
               ></div>
-              <p className="text-slate-400 font-medium mt-4">Loading products...</p>
+              <p className="text-slate-400 font-medium mt-4">Loading data...</p>
             </div>
           )}
 
@@ -249,6 +377,21 @@ const AdminDashboard = () => {
                 className="rounded-lg border border-white/10 bg-slate-800/70 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
                 aria-label="Tertiary product image URL"
               />
+              <select
+                value={newProduct.category}
+                onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+                className="rounded-lg border border-white/10 bg-slate-800/70 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
+                required
+                aria-label="Product category"
+              >
+                <option value="" disabled>Select Category *</option>
+                <option value="tops">Tops</option>
+                <option value="bottoms">Bottoms</option>
+                <option value="dresses">Dresses</option>
+                <option value="outerwear">Outerwear</option>
+                <option value="shirts">Shirts</option>
+                <option value="sweaters">Sweaters</option>
+              </select>
             </div>
             <button
               onClick={handleCreate}
@@ -336,6 +479,21 @@ const AdminDashboard = () => {
                     className="rounded-lg border border-white/10 bg-slate-800/70 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
                     aria-label="Tertiary product image URL"
                   />
+                  <select
+                    value={editProduct.category}
+                    onChange={(e) => setEditProduct({ ...editProduct, category: e.target.value })}
+                    className="rounded-lg border border-white/10 bg-slate-800/70 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
+                    required
+                    aria-label="Product category"
+                  >
+                    <option value="" disabled>Select Category *</option>
+                    <option value="tops">Tops</option>
+                    <option value="bottoms">Bottoms</option>
+                    <option value="dresses">Dresses</option>
+                    <option value="outerwear">Outerwear</option>
+                    <option value="shirts">Shirts</option>
+                    <option value="sweaters">Sweaters</option>
+                  </select>
                 </div>
                 <div className="mt-6 flex gap-4">
                   <button
@@ -359,11 +517,61 @@ const AdminDashboard = () => {
             </div>
           )}
 
+          {/* Edit User Role Modal */}
+          {editUser && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="rounded-2xl border border-white/10 bg-slate-900/70 backdrop-blur supports-[backdrop-filter]:bg-slate-900/60 shadow-xl shadow-black/40 p-8 w-full max-w-md">
+                <h2 className="text-2xl font-semibold text-slate-100 mb-6">
+                  Edit User Role
+                </h2>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="text-sm text-slate-400">
+                    <p>Username: {editUser.username}</p>
+                    <p>Email: {editUser.email}</p>
+                  </div>
+                  <select
+                    value={editUser.role}
+                    onChange={(e) => setEditUser({ ...editUser, role: e.target.value as "user" | "admin" })}
+                    className="rounded-lg border border-white/10 bg-slate-800/70 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
+                    required
+                    aria-label="User role"
+                  >
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                <div className="mt-6 flex gap-4">
+                  <button
+                    onClick={handleUpdateUserRole}
+                    disabled={isLoading}
+                    className="group flex-1 relative inline-flex items-center justify-center overflow-hidden rounded-xl bg-gradient-to-r from-cyan-500 via-sky-500 to-indigo-500 px-6 py-3 font-medium text-white shadow-lg transition-all duration-200 hover:from-cyan-400 hover:via-sky-400 hover:to-indigo-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
+                    aria-label="Save user role changes"
+                  >
+                    <span className="absolute inset-0 -z-10 opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-30 bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-indigo-500" />
+                    {isLoading ? "Saving..." : "Save Changes"}
+                  </button>
+                  <button
+                    onClick={() => setEditUser(null)}
+                    className="flex-1 rounded-xl border border-white/10 bg-slate-800/70 px-6 py-3 text-slate-100 font-medium hover:bg-slate-800/90 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all duration-200 hover:scale-105"
+                    aria-label="Cancel edit"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Product List */}
-          <section>
-            <h2 className="text-2xl font-semibold text-slate-100 mb-6 animate-fade-in">
-              Manage Products
-            </h2>
+          <section className="mb-12">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-semibold text-slate-100 animate-fade-in">
+                Manage Products
+              </h2>
+              <p className="text-sm text-slate-400">
+                Total Products: {products.length}
+              </p>
+            </div>
             {products.length === 0 && !isLoading ? (
               <p className="text-slate-400 text-center text-lg animate-fade-in">
                 No products available. Create one to get started!
@@ -399,6 +607,9 @@ const AdminDashboard = () => {
                       <p className="text-sm text-slate-400">
                         Stock: {product.stock}
                       </p>
+                      <p className="text-sm text-slate-400">
+                        Category: {product.category.charAt(0).toUpperCase() + product.category.slice(1)}
+                      </p>
                       <div className="mt-4 flex gap-2">
                         <button
                           onClick={() => setEditProduct(product)}
@@ -418,6 +629,79 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </section>
+
+          {/* Users List */}
+          <section className="mb-12">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-semibold text-slate-100 animate-fade-in">
+                Manage Users
+              </h2>
+              <p className="text-sm text-slate-400">
+                Total Users: {users.length}
+              </p>
+            </div>
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder="Search users by username or email..."
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                className="w-full sm:w-1/3 rounded-lg border border-white/10 bg-slate-800/70 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
+                aria-label="Search users"
+              />
+            </div>
+            {filteredUsers.length === 0 && !isLoading ? (
+              <p className="text-slate-400 text-center text-lg animate-fade-in">
+                {userSearch ? "No users match your search." : "No users available."}
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full rounded-2xl border border-white/10 bg-slate-900/70 backdrop-blur supports-[backdrop-filter]:bg-slate-900/60 shadow-xl shadow-black/40">
+                  <thead>
+                    <tr className="border-b border-white/10">
+                      {/* <th className="px-6 py-4 text-left text-sm font-medium text-slate-300">ID</th> */}
+                      <th className="px-6 py-4 text-left text-sm font-medium text-slate-300">Username</th>
+                      <th className="px-6 py-4 text-left text-sm font-medium text-slate-300">Email</th>
+                      <th className="px-6 py-4 text-left text-sm font-medium text-slate-300">Role</th>
+                      <th className="px-6 py-4 text-left text-sm font-medium text-slate-300">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredUsers.map((user) => (
+                      <tr
+                        key={user.id}
+                        className="border-b border-white/10 last:border-0 hover:bg-slate-800/50 transition-all duration-200"
+                      >
+                        {/* <td className="px-6 py-4 text-sm text-slate-100">{user.id}</td> */}
+                        <td className="px-6 py-4 text-sm text-slate-100">{user.username}</td>
+                        <td className="px-6 py-4 text-sm text-slate-100">{user.email}</td>
+                        <td className="px-6 py-4 text-sm text-slate-100">
+                          {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                        </td>
+                        <td className="px-6 py-4 flex gap-2">
+                          <button
+                            onClick={() => setEditUser(user)}
+                            className="rounded-lg border border-white/10 bg-slate-800/70 px-4 py-2 text-sm text-slate-100 font-medium hover:bg-slate-800/90 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all duration-200 hover:scale-105"
+                            aria-label={`Edit role for ${user.username}`}
+                          >
+                            Edit Role
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(user.id)}
+                            disabled={user.id === userId}
+                            className="rounded-lg bg-rose-500/90 px-4 py-2 text-sm text-white font-medium hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-500/40 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                            aria-label={`Delete ${user.username}`}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </section>

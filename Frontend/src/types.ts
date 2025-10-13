@@ -14,6 +14,7 @@ export interface Product {
   image1: string;
   image2: string;
   image3: string;
+  category: string;
 }
 
 export interface CartItem {

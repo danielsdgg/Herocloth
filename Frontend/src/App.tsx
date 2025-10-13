@@ -10,6 +10,7 @@ import ProductDetails from "./pages/ProductDetails";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./components/AuthContext";
 import { CartProvider } from "./Context/CartContext";
+import Contact from "./pages/Contact";
 
 const AppContent = () => {
   const location = useLocation();
@@ -50,6 +51,7 @@ const AppContent = () => {
           }
         />
         <Route path="/product/:id" element={<ProductDetails />} />
+        <Route path="/contact" element={<Contact/>} />
       </Routes>
 
       {shouldShowCartButton && <FloatingCartButton />}
