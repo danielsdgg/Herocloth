@@ -33,7 +33,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\"username\": \"testuser\", \"email\": \"test@example.com\", \"password\": \"password123\", \"role\": \"user\"}"
+              "raw": "{\"firstname\": \"John\", \"lastname\": \"Doe\", \"email\": \"john.doe@example.com\", \"phone\": 1234567890, \"password\": \"password123\", \"role\": \"user\"}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/register",
@@ -54,7 +54,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\"username\": \"adminuser\", \"email\": \"admin@example.com\", \"password\": \"admin123\", \"role\": \"admin\"}"
+              "raw": "{\"firstname\": \"Admin\", \"lastname\": \"User\", \"email\": \"admin@example.com\", \"phone\": 9876543210, \"password\": \"admin123\", \"role\": \"admin\"}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/register",
@@ -75,7 +75,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\"email\": \"test@example.com\", \"password\": \"password123\"}"
+              "raw": "{\"email\": \"john.doe@example.com\", \"password\": \"password123\"}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
@@ -139,7 +139,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\"username\": \"newusername\"}"
+              "raw": "{\"firstname\": \"Jane\", \"lastname\": \"Smith\", \"email\": \"jane.smith@example.com\", \"phone\": 1112223333, \"password\": \"newpassword456\"}"
             },
             "url": {
               "raw": "{{baseUrl}}/user/profile",
@@ -245,7 +245,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\"name\": \"New Product\", \"description\": \"A great product\", \"price\": 29.99, \"stock\": 100, \"image1\": \"http://example.com/image1.jpg\", \"category\": \"tops\"}"
+              "raw": "{\"name\": \"Elegant Blazer\", \"description\": \"Premium wool blazer for formal occasions\", \"price\": 199.99, \"stock\": 50, \"image1\": \"https://example.com/blazer1.jpg\", \"image2\": \"https://example.com/blazer2.jpg\", \"image3\": \"https://example.com/blazer3.jpg\", \"category\": \"outerwear\"}"
             },
             "url": {
               "raw": "{{baseUrl}}/product",
@@ -270,7 +270,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\"name\": \"Updated Product\", \"description\": \"An updated great product\", \"price\": 39.99, \"stock\": 50, \"image1\": \"http://example.com/updated_image1.jpg\", \"category\": \"tops\"}"
+              "raw": "{\"name\": \"Updated Blazer\", \"description\": \"Even better premium blazer\", \"price\": 219.99, \"stock\": 45, \"image1\": \"https://example.com/new-blazer1.jpg\", \"image2\": \"https://example.com/new-blazer2.jpg\", \"image3\": \"https://example.com/new-blazer3.jpg\", \"category\": \"outerwear\"}"
             },
             "url": {
               "raw": "{{baseUrl}}/product/1",
@@ -326,13 +326,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/product?category=bottoms",
+              "raw": "{{baseUrl}}/product?category=outerwear",
               "host": ["{{baseUrl}}"],
               "path": ["product"],
               "query": [
                 {
                   "key": "category",
-                  "value": "bottoms"
+                  "value": "outerwear"
                 }
               ]
             }
