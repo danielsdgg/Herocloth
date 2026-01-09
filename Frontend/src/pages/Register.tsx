@@ -12,8 +12,10 @@ const ROUTES = {
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    username: "",
+    firstname: "",
+    lastname: "",
     email: "",
+    phone: "",
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -111,7 +113,7 @@ const Register = () => {
             </ul>
           </div>
 
-          {/* Right Column - Register Form (sharpened: cleaner, more premium) */}
+          {/* Right Column - Register Form */}
           <div className="flex items-center justify-center">
             <form
               onSubmit={handleRegister}
@@ -126,25 +128,48 @@ const Register = () => {
                 </div>
               )}
 
-              {/* Username */}
+              {/* Firstname */}
               <div className="mb-6">
                 <div className="relative">
                   <input
-                    id="username"
-                    name="username"
+                    id="firstname"
+                    name="firstname"
                     type="text"
-                    value={formData.username}
+                    value={formData.firstname}
                     onChange={handleInputChange}
                     placeholder=" "
                     className="peer block w-full rounded-xl border border-white/30 bg-transparent px-6 py-4 text-white placeholder-transparent outline-none focus:border-white/70 focus:ring-4 focus:ring-white/20 transition"
-                    autoComplete="username"
+                    autoComplete="given-name"
                     required
                   />
                   <label
-                    htmlFor="username"
+                    htmlFor="firstname"
                     className="absolute left-6 top-4 -translate-y-1/2 text-gray-400 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-base peer-focus:top-0 peer-focus:text-xs peer-focus:text-white/80 bg-transparent px-1"
                   >
-                    Username
+                    First Name
+                  </label>
+                </div>
+              </div>
+
+              {/* Lastname */}
+              <div className="mb-6">
+                <div className="relative">
+                  <input
+                    id="lastname"
+                    name="lastname"
+                    type="text"
+                    value={formData.lastname}
+                    onChange={handleInputChange}
+                    placeholder=" "
+                    className="peer block w-full rounded-xl border border-white/30 bg-transparent px-6 py-4 text-white placeholder-transparent outline-none focus:border-white/70 focus:ring-4 focus:ring-white/20 transition"
+                    autoComplete="family-name"
+                    required
+                  />
+                  <label
+                    htmlFor="lastname"
+                    className="absolute left-6 top-4 -translate-y-1/2 text-gray-400 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-base peer-focus:top-0 peer-focus:text-xs peer-focus:text-white/80 bg-transparent px-1"
+                  >
+                    Last Name
                   </label>
                 </div>
               </div>
@@ -168,6 +193,28 @@ const Register = () => {
                     className="absolute left-6 top-4 -translate-y-1/2 text-gray-400 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-base peer-focus:top-0 peer-focus:text-xs peer-focus:text-white/80 bg-transparent px-1"
                   >
                     Email Address
+                  </label>
+                </div>
+              </div>
+
+              {/* Phone (Optional) */}
+              <div className="mb-6">
+                <div className="relative">
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    placeholder=" "
+                    className="peer block w-full rounded-xl border border-white/30 bg-transparent px-6 py-4 text-white placeholder-transparent outline-none focus:border-white/70 focus:ring-4 focus:ring-white/20 transition"
+                    autoComplete="tel"
+                  />
+                  <label
+                    htmlFor="phone"
+                    className="absolute left-6 top-4 -translate-y-1/2 text-gray-400 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-base peer-focus:top-0 peer-focus:text-xs peer-focus:text-white/80 bg-transparent px-1"
+                  >
+                    Phone Number (Optional)
                   </label>
                 </div>
               </div>

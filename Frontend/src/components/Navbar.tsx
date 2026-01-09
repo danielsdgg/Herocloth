@@ -1,13 +1,13 @@
 import { useState, useCallback, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { FaHome, FaShoppingCart, FaUser, FaEnvelope } from "react-icons/fa";
+import { FaHome, FaUser, FaEnvelope } from "react-icons/fa";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "./useAuth";
 
 const ROUTES = {
   HOME: "/",
-  CART: "/cart",
+  // CART: "/cart",
   CONTACT: "/contact",
   LOGIN: "/login",
   REGISTER: "/register",
@@ -41,7 +41,7 @@ const Navbar = () => {
   const navItems = useMemo(
     () => [
       { to: ROUTES.HOME, label: "Home", icon: <FaHome className="w-4 h-4" /> },
-      { to: ROUTES.CART, label: "Cart", icon: <FaShoppingCart className="w-4 h-4" /> },
+      // { to: ROUTES.CART, label: "Cart", icon: <FaShoppingCart className="w-4 h-4" /> },
       { to: ROUTES.CONTACT, label: "Contact", icon: <FaEnvelope className="w-4 h-4" /> },
     ],
     []

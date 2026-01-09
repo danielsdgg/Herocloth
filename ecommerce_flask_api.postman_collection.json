@@ -15,6 +15,12 @@
       "value": "",
       "type": "string",
       "description": "JWT token obtained from login"
+    },
+    {
+      "key": "productId",
+      "value": "1",
+      "type": "string",
+      "description": "Product ID for testing reviews (change after creating a product)"
     }
   ],
   "item": [
@@ -442,6 +448,63 @@
               "host": ["{{baseUrl}}"],
               "path": ["cart"]
             }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        {
+          "name": "Submit Review (Authenticated)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": {{productId}},\n  \"rating\": 5,\n  \"comment\": \"This product is amazing! High quality and fast delivery.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/review/",
+              "host": ["{{baseUrl}}"],
+              "path": ["review", ""]
+            },
+            "description": "Create a new review. User must be logged in."
+          }
+        },
+        {
+          "name": "Get Reviews for Product",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/review/product/{{productId}}/reviews",
+              "host": ["{{baseUrl}}"],
+              "path": ["review", "product", "{{productId}}", "reviews"]
+            },
+            "description": "Fetch all reviews for a specific product, including user details (firstname, lastname, email)."
+          }
+        },
+        {
+          "name": "Get Rating Summary for Product",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/review/product/{{productId}}/rating-summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["review", "product", "{{productId}}", "rating-summary"]
+            },
+            "description": "Get average rating and total review count for a product."
           }
         }
       ]

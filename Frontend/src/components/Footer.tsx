@@ -35,8 +35,8 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/cart" className="text-base font-light text-white opacity-60 hover:opacity-100 transition">
-                  Cart
+                <Link to="/contact" className="text-base font-light text-white opacity-60 hover:opacity-100 transition">
+                  Contact
                 </Link>
               </li>
               <li>
@@ -44,11 +44,11 @@ const Footer = () => {
                   Profile
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <Link to="/register" className="text-base font-light text-white opacity-60 hover:opacity-100 transition">
                   Sign Up
                 </Link>
-              </li>
+              </li> */}
             </ul>
           </div>
 

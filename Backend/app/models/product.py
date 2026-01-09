@@ -1,5 +1,5 @@
-# app/models/product.py
 from app import db
+from app.models.review import Review 
 
 class Product(db.Model):
     __tablename__ = 'product'

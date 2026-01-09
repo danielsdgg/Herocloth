@@ -8,9 +8,14 @@ import { useAuth } from "../components/useAuth";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
+interface ProductWithRating extends Product {
+  average_rating: number;
+  review_count: number;
+}
+
 const Home = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductWithRating[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<ProductWithRating[]>([]);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [sortOption, setSortOption] = useState<string>("default");
   const { addToCart, isLoading: cartLoading } = useCart();
@@ -36,8 +41,29 @@ const Home = () => {
           ...product,
           category: inferCategory(product.name),
         }));
-        setProducts(productsWithCategories || []);
-        setFilteredProducts(productsWithCategories || []);
+
+        // Fetch rating summary for each product
+        const productsWithRatings = await Promise.all(
+          productsWithCategories.map(async (product) => {
+            try {
+              const summaryRes = await api.get(`/review/product/${product.id}/rating-summary`);
+              return {
+                ...product,
+                average_rating: summaryRes.data.average_rating || 0,
+                review_count: summaryRes.data.review_count || 0,
+              };
+            } catch {
+              return {
+                ...product,
+                average_rating: 0,
+                review_count: 0,
+              };
+            }
+          })
+        );
+
+        setProducts(productsWithRatings);
+        setFilteredProducts(productsWithRatings);
       } catch (error: unknown) {
         toast.error("Failed to fetch products.");
       }
@@ -73,12 +99,35 @@ const Home = () => {
     [token, addToCart, navigate]
   );
 
+  const renderStars = (rating: number) => {
+    const fullStars = Math.floor(rating);
+    const hasHalf = rating % 1 >= 0.5;
+    return (
+      <div className="flex items-center gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <span
+            key={star}
+            className={`text-xs ${
+              star <= fullStars
+                ? "text-gray-900"
+                : star === fullStars + 1 && hasHalf
+                ? "text-gray-900"
+                : "text-gray-300"
+            }`}
+          >
+            ★
+          </span>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <>
       <Navbar />
 
       <main className="min-h-screen bg-gray-50">
-        {/* Small, elegant hero section - compact even on mobile */}
+        {/* Small, elegant hero section */}
         <section className="bg-gray-200 py-12 md:py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 className="text-3xl md:text-4xl font-light tracking-wider text-gray-900">
@@ -92,14 +141,12 @@ const Home = () => {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col lg:flex-row gap-8">
-            {/* Sidebar Filters - Visible on desktop, collapsible on mobile */}
+            {/* Sidebar Filters */}
             <aside className="lg:w-64 flex-shrink-0">
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <h2 className="text-lg font-medium text-gray-900 mb-4">Categories</h2>
 
-                {/* Category Filter */}
                 <div className="mb-8">
-                  {/* <h3 className="text-sm font-medium text-gray-700 mb-3">Category</h3> */}
                   <ul className="space-y-2">
                     {["all", "tops", "bottoms", "dresses", "outerwear"].map((cat) => (
                       <li key={cat}>
@@ -118,7 +165,6 @@ const Home = () => {
                   </ul>
                 </div>
 
-                {/* Sort By - Placed in sidebar for consistency */}
                 <div>
                   <h3 className="text-sm font-medium text-gray-700 mb-3">Sort By</h3>
                   <select
@@ -166,7 +212,20 @@ const Home = () => {
                             {product.name}
                           </h3>
                         </Link>
-                        <p className="mt-2 text-lg font-semibold text-gray-800">
+
+                        {/* Star Rating */}
+                        {product.review_count > 0 ? (
+                          <div className="flex items-center gap-2 mt-2">
+                            {renderStars(product.average_rating)}
+                            <span className="text-xs text-gray-500">
+                              ({product.review_count})
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="h-5 mt-2" /> 
+                        )}
+
+                        <p className="mt-3 text-lg font-semibold text-gray-800">
                           ${product.price.toFixed(2)}
                         </p>
                         {product.stock === 0 && (
