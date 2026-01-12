@@ -75,7 +75,7 @@ const Cart = () => {
                 <div className="flex justify-between items-baseline mb-10">
                   <p className="text-2xl font-medium text-black">Total</p>
                   <p className="text-4xl font-bold tracking-wide text-black">
-                    ${total}
+                    KSh {total}
                   </p>
                 </div>
 

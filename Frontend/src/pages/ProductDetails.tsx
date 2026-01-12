@@ -285,7 +285,7 @@ const ProductDetails = () => {
               </div>
 
               <p className="text-4xl font-extralight mb-10">
-                ${product.price.toFixed(2)}
+                KSh {product.price.toFixed(2)}
               </p>
 
               <p className="text-sm font-light text-gray-700 leading-relaxed mb-12 max-w-2xl">

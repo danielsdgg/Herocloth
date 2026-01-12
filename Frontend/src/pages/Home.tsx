@@ -226,7 +226,7 @@ const Home = () => {
                         )}
 
                         <p className="mt-3 text-lg font-semibold text-gray-800">
-                          ${product.price.toFixed(2)}
+                          KSh {product.price.toFixed(2)}
                         </p>
                         {product.stock === 0 && (
                           <p className="mt-1 text-xs text-red-600 font-medium">Out of stock</p>

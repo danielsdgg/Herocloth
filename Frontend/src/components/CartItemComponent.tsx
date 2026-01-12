@@ -46,7 +46,7 @@ const CartItemComponent = ({ item }: CartItemProps) => {
           {item.name}
         </h3>
         <p className="text-sm text-slate-400 mt-1">
-          ${item.price.toFixed(2)} each
+          KSh {item.price.toFixed(2)} each
         </p>
         <div className="flex items-center gap-2 mt-2">
           <button
@@ -80,7 +80,7 @@ const CartItemComponent = ({ item }: CartItemProps) => {
         </div>
       </div>
       <p className="text-sm font-semibold text-cyan-400">
-        ${(item.price * item.quantity).toFixed(2)}
+        KSh {(item.price * item.quantity).toFixed(2)}
       </p>
     </div>
   );

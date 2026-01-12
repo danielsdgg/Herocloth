@@ -37,7 +37,13 @@ const AdminDashboard = () => {
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [editUser, setEditUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<"users" | "products" | "create" | "reviews">("users");
+
+  // Close sidebar when section changes on mobile
+  useEffect(() => {
+    if (window.innerWidth < 1024) setSidebarOpen(false);
+  }, [activeSection]);
 
   // Fetch products
   useEffect(() => {
@@ -75,7 +81,7 @@ const AdminDashboard = () => {
     fetch();
   }, [token]);
 
-  // Fetch reviews only when section is active
+  // Fetch reviews when section is active
   useEffect(() => {
     if (!token || activeSection !== "reviews") return;
     const fetch = async () => {
@@ -212,27 +218,44 @@ const AdminDashboard = () => {
   }, [token, userId]);
 
   const inputFields = [
-    { key: "name", label: "Product Name *" },
-    { key: "description", label: "Description" },
+    { key: "name", label: "Product Name *", type: "text" },
+    { key: "description", label: "Description", type: "text" },
     { key: "price", label: "Price (KES) *", type: "number" },
     { key: "stock", label: "Stock Quantity *", type: "number" },
-    { key: "image1", label: "Image 1 URL *" },
-    { key: "image2", label: "Image 2 URL" },
-    { key: "image3", label: "Image 3 URL" },
+    { key: "image1", label: "Image 1 URL *", type: "text" },
+    { key: "image2", label: "Image 2 URL", type: "text" },
+    { key: "image3", label: "Image 3 URL", type: "text" },
   ];
 
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-black text-white flex">
-        <aside className="w-72 bg-white/5 backdrop-blur-2xl border-r border-white/10 flex flex-col">
+
+      <div className="min-h-screen bg-black text-white flex flex-col lg:flex-row">
+        {/* Mobile Sidebar Toggle */}
+        <button
+          className="lg:hidden fixed mt-16 top-4 left-4 z-50 p-3 bg-white/4 rounded-full"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+        >
+          <span className="text-white text-xl">☰</span>
+        </button>
+
+        {/* Sidebar */}
+        <aside
+          className={`fixed inset-y-0 left-0 z-40 w-72 bg-white/5 backdrop-blur-2xl border-r border-white/10 transform transition-transform duration-300 lg:relative lg:translate-x-0 ${
+            sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } lg:flex lg:flex-col`}
+        >
           <div className="p-10">
-            <h2 className="text-2xl font-extralight tracking-widest mb-16 text-gray-300">Admin Panel</h2>
+            <h2 className="text-2xl mt-25 font-extralight tracking-widest mb-16 text-gray-300">Admin Panel</h2>
             <nav className="space-y-3">
               {["users", "create", "products", "reviews"].map(sec => (
                 <button
                   key={sec}
-                  onClick={() => setActiveSection(sec as any)}
+                  onClick={() => {
+                    setActiveSection(sec as any);
+                    setSidebarOpen(false);
+                  }}
                   className={`w-full text-left px-8 py-5 rounded-3xl transition text-base font-light ${
                     activeSection === sec ? "bg-white/10 border border-white/20 shadow-lg" : "hover:bg-white/5"
                   }`}
@@ -248,48 +271,68 @@ const AdminDashboard = () => {
           </div>
         </aside>
 
-        <main className="flex-1 p-16 overflow-y-auto">
-          <header className="mb-20">
-            <h1 className="text-6xl font-extralight tracking-widest mb-4">Dashboard</h1>
-            <p className="text-xl text-gray-400 font-light">Welcome back, {firstname} {lastname}.</p>
+        {/* Overlay for mobile sidebar */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/60 z-30 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* Main Content */}
+        <main className="flex-1 p-6 sm:p-10 lg:p-16 overflow-y-auto">
+          <header className="mt-9 mb-12 sm:mb-20">
+            <h1 className="text-5xl sm:text-6xl font-extralight tracking-widest mb-4">Dashboard</h1>
+            <p className="text-lg sm:text-xl text-gray-400 font-light">Welcome back, {firstname} {lastname}.</p>
           </header>
 
-          {isLoading && <div className="text-center py-32"><div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-white border-t-transparent" /></div>}
+          {isLoading && (
+            <div className="text-center py-20 sm:py-32">
+              <div className="inline-block h-10 w-10 sm:h-12 sm:w-12 animate-spin rounded-full border-4 border-white border-t-transparent" />
+            </div>
+          )}
 
           <AnimatePresence mode="wait">
-            {/* Users */}
+            {/* Users Section */}
             {activeSection === "users" && (
               <motion.div key="users" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }}>
-                <div className="mb-10 flex justify-between items-center">
-                  <h2 className="text-4xl font-extralight tracking-widest">Users</h2>
-                  <p className="text-gray-500 text-lg">Total: {users.length}</p>
+                <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <h2 className="text-3xl sm:text-4xl font-extralight tracking-widest">Users</h2>
+                  <p className="text-gray-500 text-base sm:text-lg">Total: {users.length}</p>
                 </div>
-                <input type="text" placeholder="Search by name or email..." value={userSearch} onChange={e => setUserSearch(e.target.value)}
-                  className="w-full max-w-lg px-8 py-5 bg-white/10 border border-white/20 rounded-3xl placeholder-gray-500 focus:border-white/50 outline-none mb-12 text-sm" />
-                <div className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
-                  <table className="w-full">
+
+                <input
+                  type="text"
+                  placeholder="Search by name or email..."
+                  value={userSearch}
+                  onChange={e => setUserSearch(e.target.value)}
+                  className="w-full max-w-lg px-6 py-4 bg-white/10 border border-white/20 rounded-3xl placeholder-gray-500 focus:border-white/50 outline-none mb-8 text-sm"
+                />
+
+                <div className="overflow-x-auto bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl">
+                  <table className="w-full min-w-[640px]">
                     <thead className="bg-white/5 border-b border-white/10">
                       <tr>
-                        <th className="px-10 py-8 text-left text-xs uppercase tracking-widest text-gray-500">Name</th>
-                        <th className="px-10 py-8 text-left text-xs uppercase tracking-widest text-gray-500">Email</th>
-                        <th className="px-10 py-8 text-left text-xs uppercase tracking-widest text-gray-500">Phone</th>
-                        <th className="px-10 py-8 text-left text-xs uppercase tracking-widest text-gray-500">Role</th>
-                        <th className="px-10 py-8 text-left text-xs uppercase tracking-widest text-gray-500">Actions</th>
+                        <th className="px-6 py-6 text-left text-xs uppercase tracking-widest text-gray-500">Name</th>
+                        <th className="px-6 py-6 text-left text-xs uppercase tracking-widest text-gray-500">Email</th>
+                        <th className="px-6 py-6 text-left text-xs uppercase tracking-widest text-gray-500">Phone</th>
+                        <th className="px-6 py-6 text-left text-xs uppercase tracking-widest text-gray-500">Role</th>
+                        <th className="px-6 py-6 text-left text-xs uppercase tracking-widest text-gray-500">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredUsers.length === 0 ? (
-                        <tr><td colSpan={5} className="text-center py-20 text-gray-500 text-lg">{userSearch ? "No matching users" : "No users"}</td></tr>
+                        <tr><td colSpan={5} className="text-center py-16 text-gray-500 text-base">{userSearch ? "No matching users" : "No users available"}</td></tr>
                       ) : filteredUsers.map(u => (
-                        <tr key={u.id} className="border-b border-white/5 hover:bg-white/5">
-                          <td className="px-10 py-8 text-sm font-light">{u.firstname} {u.lastname}</td>
-                          <td className="px-10 py-8 text-sm text-gray-400">{u.email}</td>
-                          <td className="px-10 py-8 text-sm text-gray-400">{u.phone || "—"}</td>
-                          <td className="px-10 py-8 text-sm capitalize">{u.role}</td>
-                          <td className="px-10 py-8 flex gap-4">
-                            <button onClick={() => setEditUser(u)} className="px-8 py-4 bg-white/10 border border-white/20 rounded-2xl hover:bg-white/20 text-xs">Edit Role</button>
+                        <tr key={u.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                          <td className="px-6 py-6 text-sm font-light whitespace-nowrap">{u.firstname} {u.lastname}</td>
+                          <td className="px-6 py-6 text-sm text-gray-400 whitespace-nowrap">{u.email}</td>
+                          <td className="px-6 py-6 text-sm text-gray-400 whitespace-nowrap">{u.phone || "—"}</td>
+                          <td className="px-6 py-6 text-sm capitalize">{u.role}</td>
+                          <td className="px-6 py-6 flex flex-col sm:flex-row gap-3">
+                            <button onClick={() => setEditUser(u)} className="px-6 py-3 bg-white/10 border border-white/20 rounded-xl hover:bg-white/20 text-xs">Edit Role</button>
                             <button onClick={() => handleDeleteUser(u.id)} disabled={u.id === userId}
-                              className="px-8 py-4 bg-red-900/20 border border-red-900/50 rounded-2xl hover:bg-red-900/30 text-xs disabled:opacity-50">Delete</button>
+                              className="px-6 py-3 bg-red-900/20 border border-red-900/50 rounded-xl hover:bg-red-900/30 text-xs disabled:opacity-50">Delete</button>
                           </td>
                         </tr>
                       ))}
@@ -302,9 +345,9 @@ const AdminDashboard = () => {
             {/* Create Product */}
             {activeSection === "create" && (
               <motion.div key="create" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }}>
-                <h2 className="text-4xl font-extralight tracking-widest mb-16">Create New Product</h2>
-                <div className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-16 shadow-2xl">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <h2 className="text-3xl sm:text-4xl font-extralight tracking-widest mb-12">Create New Product</h2>
+                <div className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-8 sm:p-16 shadow-2xl">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-10">
                     {inputFields.map(({ key, label, type = "text" }) => (
                       <div key={key}>
                         <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2">{label}</label>
@@ -315,7 +358,7 @@ const AdminDashboard = () => {
                             ...prev,
                             [key]: type === "number" ? (key === "price" ? parseFloat(e.target.value) || 0 : parseInt(e.target.value) || 0) : e.target.value
                           }))}
-                          className="w-full px-8 py-5 bg-white/10 border border-white/20 rounded-3xl placeholder-gray-500 focus:border-white/50 outline-none text-sm"
+                          className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-3xl placeholder-gray-500 focus:border-white/50 outline-none text-sm"
                           required={label.includes("*")}
                         />
                       </div>
@@ -323,14 +366,14 @@ const AdminDashboard = () => {
                     <div>
                       <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2">Category *</label>
                       <select value={newProduct.category} onChange={e => setNewProduct(prev => ({ ...prev, category: e.target.value }))}
-                        className="w-full px-8 py-5 bg-white/10 border border-white/20 rounded-3xl text-black focus:border-white/50 text-sm" required>
+                        className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-3xl text-black focus:border-white/50 text-sm" required>
                         <option value="" disabled>Select Category</option>
                         {["tops","bottoms","dresses","outerwear","shirts","sweaters"].map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
                       </select>
                     </div>
                   </div>
                   <button onClick={handleCreate} disabled={isLoading}
-                    className="mt-16 px-20 py-6 bg-white text-black font-medium uppercase tracking-widest rounded-3xl hover:bg-gray-100 disabled:opacity-60 text-sm">
+                    className="mt-12 w-full sm:w-auto px-16 py-5 bg-white text-black font-medium uppercase tracking-widest rounded-3xl hover:bg-gray-100 disabled:opacity-60 text-sm">
                     {isLoading ? "Creating..." : "Create Product"}
                   </button>
                 </div>
@@ -340,29 +383,29 @@ const AdminDashboard = () => {
             {/* Products */}
             {activeSection === "products" && (
               <motion.div key="products" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }}>
-                <div className="mb-12 flex justify-between items-center">
-                  <h2 className="text-4xl font-extralight tracking-widest">Products</h2>
-                  <p className="text-gray-500 text-lg">Total: {products.length}</p>
+                <div className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <h2 className="text-3xl sm:text-4xl font-extralight tracking-widest">Products</h2>
+                  <p className="text-gray-500 text-base sm:text-lg">Total: {products.length}</p>
                 </div>
                 {products.length === 0 ? (
-                  <p className="text-center py-32 text-gray-400 text-lg">No products yet.</p>
+                  <p className="text-center py-20 sm:py-32 text-gray-400 text-base sm:text-lg">No products yet.</p>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-12">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-12">
                     {products.map(p => (
-                      <motion.div key={p.id} whileHover={{ y: -12 }} className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
-                        <div className="h-96 overflow-hidden">
+                      <motion.div key={p.id} whileHover={{ y: -8 }} className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
+                        <div className="aspect-[4/5] sm:aspect-square overflow-hidden">
                           <img src={p.image1 || "https://via.placeholder.com/500x600?text=No+Image"} alt={p.name}
-                            className="w-full h-full object-cover hover:scale-110 transition-transform duration-700" />
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
                         </div>
-                        <div className="p-10">
-                          <h3 className="text-xl font-light truncate mb-3">{p.name}</h3>
-                          <p className="text-gray-400 text-xs line-clamp-2 mb-6">{p.description || "No description"}</p>
-                          <p className="text-3xl font-extralight mb-3">Ksh {p.price.toFixed(2)}</p>
+                        <div className="p-6 sm:p-10">
+                          <h3 className="text-lg sm:text-xl font-light truncate mb-3">{p.name}</h3>
+                          <p className="text-gray-400 text-xs sm:text-sm line-clamp-2 mb-4">{p.description || "No description"}</p>
+                          <p className="text-2xl sm:text-3xl font-extralight mb-3">Ksh {p.price.toFixed(2)}</p>
                           <p className="text-xs uppercase tracking-widest text-gray-500 mb-2">Stock: {p.stock}</p>
-                          <p className="text-xs uppercase tracking-widest text-gray-500 mb-8">Category: {p.category}</p>
-                          <div className="flex gap-4">
-                            <button onClick={() => setEditProduct(p)} className="flex-1 py-4 bg-white/10 border border-white/20 rounded-2xl hover:bg-white/20 text-xs">Edit</button>
-                            <button onClick={() => handleDelete(p.id)} className="flex-1 py-4 bg-red-900/20 border border-red-900/50 rounded-2xl hover:bg-red-900/30 text-xs">Delete</button>
+                          <p className="text-xs uppercase tracking-widest text-gray-500 mb-6">Category: {p.category}</p>
+                          <div className="flex flex-col sm:flex-row gap-3">
+                            <button onClick={() => setEditProduct(p)} className="flex-1 py-3 bg-white/10 border border-white/20 rounded-2xl hover:bg-white/20 text-xs">Edit</button>
+                            <button onClick={() => handleDelete(p.id)} className="flex-1 py-3 bg-red-900/20 border border-red-900/50 rounded-2xl hover:bg-red-900/30 text-xs">Delete</button>
                           </div>
                         </div>
                       </motion.div>
@@ -375,18 +418,18 @@ const AdminDashboard = () => {
             {/* Reviews */}
             {activeSection === "reviews" && (
               <motion.div key="reviews" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }}>
-                <div className="mb-12 flex justify-between items-center">
-                  <h2 className="text-4xl font-extralight tracking-widest">Customer Reviews</h2>
-                  <p className="text-gray-500 text-lg">Total: {reviews.length}</p>
+                <div className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <h2 className="text-3xl sm:text-4xl font-extralight tracking-widest">Customer Reviews</h2>
+                  <p className="text-gray-500 text-base sm:text-lg">Total: {reviews.length}</p>
                 </div>
                 {reviews.length === 0 ? (
-                  <p className="text-center py-32 text-gray-400 text-lg">No reviews yet.</p>
+                  <p className="text-center py-20 sm:py-32 text-gray-400 text-base sm:text-lg">No reviews yet.</p>
                 ) : (
-                  <div className="space-y-12">
+                  <div className="space-y-8 sm:space-y-12">
                     {reviews.map(r => (
                       <motion.div key={r.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                        className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-12 shadow-2xl">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+                        className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-6 sm:p-12 shadow-2xl">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-10">
                           <div>
                             <div className="aspect-square bg-gray-200 rounded-2xl overflow-hidden mb-4">
                               <img src={r.product.image1} alt={r.product.name} className="w-full h-full object-cover" />
@@ -395,18 +438,18 @@ const AdminDashboard = () => {
                           </div>
                           <div className="md:col-span-2 flex flex-col justify-between">
                             <div>
-                              <div className="flex items-center gap-6 mb-6">
-                                <div className="w-14 h-14 bg-gray-300 rounded-full" />
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 mb-6">
+                                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gray-300 rounded-full flex-shrink-0" />
                                 <div>
-                                  <p className="text-lg font-light">{r.user.firstname} {r.user.lastname}</p>
+                                  <p className="text-base sm:text-lg font-light">{r.user.firstname} {r.user.lastname}</p>
                                   <p className="text-xs text-gray-500 mt-1">
                                     {new Date(r.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
                                   </p>
                                 </div>
                               </div>
-                              <div className="flex gap-1 mb-6">
+                              <div className="flex gap-1 mb-4 sm:mb-6">
                                 {[1,2,3,4,5].map(s => (
-                                  <span key={s} className={`text-xl ${s <= r.rating ? "text-white" : "text-gray-600"}`}>★</span>
+                                  <span key={s} className={`text-lg sm:text-xl ${s <= r.rating ? "text-white" : "text-gray-600"}`}>★</span>
                                 ))}
                               </div>
                               <p className="text-sm font-light text-gray-300 leading-relaxed">{r.comment || "No comment."}</p>
@@ -425,11 +468,11 @@ const AdminDashboard = () => {
           <AnimatePresence>
             {editProduct && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-8">
-                <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
-                  className="bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl p-16 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-                  <h2 className="text-4xl font-extralight tracking-widest mb-16">Edit Product</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 sm:p-8">
+                <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
+                  className="bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl p-8 sm:p-16 w-full max-w-4xl max-h-[95vh] overflow-y-auto">
+                  <h2 className="text-3xl sm:text-4xl font-extralight tracking-widest mb-12">Edit Product</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-10">
                     {inputFields.map(({ key, label, type = "text" }) => (
                       <div key={key}>
                         <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2">{label}</label>
@@ -440,7 +483,7 @@ const AdminDashboard = () => {
                             ...prev,
                             [key]: type === "number" ? (key === "price" ? parseFloat(e.target.value) || 0 : parseInt(e.target.value) || 0) : e.target.value
                           }) : null)}
-                          className="w-full px-8 py-5 bg-white/10 border border-white/20 rounded-3xl placeholder-gray-500 focus:border-white/50 text-sm"
+                          className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-3xl placeholder-gray-500 focus:border-white/50 text-sm"
                           required={label.includes("*")}
                         />
                       </div>
@@ -448,19 +491,19 @@ const AdminDashboard = () => {
                     <div>
                       <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2">Category *</label>
                       <select value={editProduct.category} onChange={e => setEditProduct(prev => prev ? {...prev, category: e.target.value} : null)}
-                        className="w-full px-8 py-5 bg-white/10 border border-white/20 rounded-3xl text-black focus:border-white/50 text-sm" required>
+                        className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-3xl text-black focus:border-white/50 text-sm" required>
                         <option value="" disabled>Select Category</option>
                         {["tops","bottoms","dresses","outerwear","shirts","sweaters"].map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
                       </select>
                     </div>
                   </div>
-                  <div className="mt-16 flex gap-10">
+                  <div className="mt-12 flex flex-col sm:flex-row gap-6">
                     <button onClick={handleUpdate} disabled={isLoading}
-                      className="flex-1 py-6 bg-white text-black font-medium uppercase tracking-widest rounded-3xl hover:bg-gray-100 disabled:opacity-60 text-sm">
+                      className="flex-1 py-5 bg-white text-black font-medium uppercase tracking-widest rounded-3xl hover:bg-gray-100 disabled:opacity-60 text-sm">
                       {isLoading ? "Saving..." : "Save Changes"}
                     </button>
                     <button onClick={() => setEditProduct(null)}
-                      className="flex-1 py-6 bg-white/10 border border-white/20 rounded-3xl hover:bg-white/20 text-sm">Cancel</button>
+                      className="flex-1 py-5 bg-white/10 border border-white/20 rounded-3xl hover:bg-white/20 text-sm">Cancel</button>
                   </div>
                 </motion.div>
               </motion.div>
@@ -471,27 +514,27 @@ const AdminDashboard = () => {
           <AnimatePresence>
             {editUser && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-8">
-                <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
-                  className="bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl p-12 w-full max-w-lg">
-                  <h2 className="text-3xl font-extralight tracking-widest mb-12">Edit User Role</h2>
-                  <div className="space-y-6 mb-12 text-sm">
+                className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 sm:p-8">
+                <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
+                  className="bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl p-8 sm:p-12 w-full max-w-lg">
+                  <h2 className="text-2xl sm:text-3xl font-extralight tracking-widest mb-10">Edit User Role</h2>
+                  <div className="space-y-6 mb-10 text-sm">
                     <p className="text-gray-400">Name: <span className="text-white">{editUser.firstname} {editUser.lastname}</span></p>
                     <p className="text-gray-400">Email: <span className="text-white">{editUser.email}</span></p>
                     <p className="text-gray-400">Phone: <span className="text-white">{editUser.phone || "—"}</span></p>
                   </div>
                   <select value={editUser.role} onChange={e => setEditUser(prev => prev ? {...prev, role: e.target.value as "user"|"admin"} : null)}
-                    className="w-full px-8 py-5 bg-white/10 border border-white/20 rounded-3xl text-white focus:border-white/50 mb-12 text-sm">
+                    className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-3xl text-white focus:border-white/50 mb-10 text-sm">
                     <option value="user">User</option>
                     <option value="admin">Admin</option>
                   </select>
-                  <div className="flex gap-8">
+                  <div className="flex flex-col sm:flex-row gap-6">
                     <button onClick={handleUpdateUserRole} disabled={isLoading}
-                      className="flex-1 py-6 bg-white text-black font-medium uppercase tracking-widest rounded-3xl hover:bg-gray-100 disabled:opacity-60 text-sm">
+                      className="flex-1 py-5 bg-white text-black font-medium uppercase tracking-widest rounded-3xl hover:bg-gray-100 disabled:opacity-60 text-sm">
                       {isLoading ? "Saving..." : "Save Changes"}
                     </button>
                     <button onClick={() => setEditUser(null)}
-                      className="flex-1 py-6 bg-white/10 border border-white/20 rounded-3xl hover:bg-white/20 text-sm">Cancel</button>
+                      className="flex-1 py-5 bg-white/10 border border-white/20 rounded-3xl hover:bg-white/20 text-sm">Cancel</button>
                   </div>
                 </motion.div>
               </motion.div>
