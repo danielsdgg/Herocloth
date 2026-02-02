@@ -53,13 +53,18 @@ def create_app():
         from app.routes.cart import cart_bp
         from app.routes.product import product_bp
         from app.routes.user import user_bp
-        from app.routes.review import review_bp  # NEW: Import the review blueprint
+        from app.routes.review import review_bp
+        from app.routes.order import order_bp
+        from app.routes.mpesa import mpesa_bp
 
         app.register_blueprint(auth_bp, url_prefix='/auth')
         app.register_blueprint(cart_bp, url_prefix='/cart')
         app.register_blueprint(product_bp, url_prefix='/product')
         app.register_blueprint(user_bp, url_prefix='/user')
-        app.register_blueprint(review_bp, url_prefix='/review')  # NEW: Register review blueprint
+        app.register_blueprint(review_bp, url_prefix='/review')
+        app.register_blueprint(order_bp, url_prefix='/order')
+        app.register_blueprint(mpesa_bp, url_prefix='/mpesa')
+        
 
         db.create_all()
         print("Registered blueprints:", [rule.endpoint for rule in app.url_map.iter_rules()])

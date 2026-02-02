@@ -1,7 +1,8 @@
 {
   "info": {
-    "name": "E-commerce Flask API",
-    "description": "Postman collection for testing Flask e-commerce backend APIs",
+    "_postman_id": "e-commerce-flask-updated",
+    "name": "E-commerce Flask API (Updated)",
+    "description": "Postman collection for testing Flask e-commerce backend APIs - with M-Pesa Daraja STK Push support",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -14,13 +15,37 @@
       "key": "token",
       "value": "",
       "type": "string",
-      "description": "JWT token obtained from login"
+      "description": "JWT access token (from /auth/login)"
     },
     {
       "key": "productId",
       "value": "1",
       "type": "string",
-      "description": "Product ID for testing reviews (change after creating a product)"
+      "description": "Product ID for testing reviews/orders"
+    },
+    {
+      "key": "orderId",
+      "value": "1",
+      "type": "string",
+      "description": "Order ID for testing (update after creating)"
+    },
+    {
+      "key": "darajaConsumerKey",
+      "value": "your_consumer_key_here",
+      "type": "string",
+      "description": "Daraja API Consumer Key (sandbox or production)"
+    },
+    {
+      "key": "darajaConsumerSecret",
+      "value": "your_consumer_secret_here",
+      "type": "string",
+      "description": "Daraja API Consumer Secret"
+    },
+    {
+      "key": "mpesaPhone",
+      "value": "254708374149",
+      "type": "string",
+      "description": "Test phone for STK Push (sandbox: 254708374149)"
     }
   ],
   "item": [
@@ -71,6 +96,23 @@
         },
         {
           "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Login successful\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json()).to.have.property('access_token');",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set(\"token\", jsonData.access_token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -172,23 +214,6 @@
           }
         },
         {
-          "name": "Get User by ID (Admin)",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/user/2",
-              "host": ["{{baseUrl}}"],
-              "path": ["user", "2"]
-            }
-          }
-        },
-        {
           "name": "Update User Role (Admin)",
           "request": {
             "method": "PUT",
@@ -261,48 +286,6 @@
           }
         },
         {
-          "name": "Update Product (Admin)",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\"name\": \"Updated Blazer\", \"description\": \"Even better premium blazer\", \"price\": 219.99, \"stock\": 45, \"image1\": \"https://example.com/new-blazer1.jpg\", \"image2\": \"https://example.com/new-blazer2.jpg\", \"image3\": \"https://example.com/new-blazer3.jpg\", \"category\": \"outerwear\"}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/product/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["product", "1"]
-            }
-          }
-        },
-        {
-          "name": "Delete Product (Admin)",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/product/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["product", "1"]
-            }
-          }
-        },
-        {
           "name": "Get All Products",
           "request": {
             "method": "GET",
@@ -311,36 +294,6 @@
               "raw": "{{baseUrl}}/product",
               "host": ["{{baseUrl}}"],
               "path": ["product"]
-            }
-          }
-        },
-        {
-          "name": "Get Product by ID",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/product/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["product", "1"]
-            }
-          }
-        },
-        {
-          "name": "Get Products by Category",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/product?category=outerwear",
-              "host": ["{{baseUrl}}"],
-              "path": ["product"],
-              "query": [
-                {
-                  "key": "category",
-                  "value": "outerwear"
-                }
-              ]
             }
           }
         }
@@ -365,7 +318,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\"product_id\": 1, \"quantity\": 2}"
+              "raw": "{\"product_id\": {{productId}}, \"quantity\": 2}"
             },
             "url": {
               "raw": "{{baseUrl}}/cart/add",
@@ -392,48 +345,6 @@
           }
         },
         {
-          "name": "Update Cart Item",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\"quantity\": 3}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/cart/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["cart", "1"]
-            }
-          }
-        },
-        {
-          "name": "Remove Cart Item",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/cart/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["cart", "1"]
-            }
-          }
-        },
-        {
           "name": "Clear Cart",
           "request": {
             "method": "DELETE",
@@ -456,7 +367,7 @@
       "name": "Reviews",
       "item": [
         {
-          "name": "Submit Review (Authenticated)",
+          "name": "Submit Review",
           "request": {
             "method": "POST",
             "header": [
@@ -471,31 +382,17 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"product_id\": {{productId}},\n  \"rating\": 5,\n  \"comment\": \"This product is amazing! High quality and fast delivery.\"\n}"
+              "raw": "{\n  \"product_id\": {{productId}},\n  \"rating\": 5,\n  \"comment\": \"Great quality and fast delivery!\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/review/",
               "host": ["{{baseUrl}}"],
               "path": ["review", ""]
-            },
-            "description": "Create a new review. User must be logged in."
+            }
           }
         },
         {
-          "name": "Get Reviews for Product",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/review/product/{{productId}}/reviews",
-              "host": ["{{baseUrl}}"],
-              "path": ["review", "product", "{{productId}}", "reviews"]
-            },
-            "description": "Fetch all reviews for a specific product, including user details (firstname, lastname, email)."
-          }
-        },
-        {
-          "name": "Get Rating Summary for Product",
+          "name": "Get Rating Summary",
           "request": {
             "method": "GET",
             "header": [],
@@ -503,11 +400,191 @@
               "raw": "{{baseUrl}}/review/product/{{productId}}/rating-summary",
               "host": ["{{baseUrl}}"],
               "path": ["review", "product", "{{productId}}", "rating-summary"]
-            },
-            "description": "Get average rating and total review count for a product."
+            }
           }
         }
       ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Create Order (Prepay + M-Pesa + Nairobi)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payment_method\": \"mpesa\",\n  \"payment_timing\": \"prepay\",\n  \"delivery_option\": \"nairobi\",\n  \"mpesa_phone\": \"{{mpesaPhone}}\",\n  \"street\": \"Ngong Road\",\n  \"city\": \"Nairobi\",\n  \"county\": \"Nairobi\",\n  \"postal_code\": \"00100\",\n  \"instructions\": \"Leave at gate\",\n  \"contact_phone\": \"{{mpesaPhone}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/order/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["order", "create"]
+            },
+            "description": "Creates prepay order with M-Pesa and Nairobi delivery (fee 200 added)"
+          }
+        },
+        {
+          "name": "Create Order (Postpay + Nairobi)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payment_method\": \"mpesa\",\n  \"payment_timing\": \"postpay\",\n  \"delivery_option\": \"nairobi\",\n  \"street\": \"Kenyatta Ave\",\n  \"city\": \"Nairobi\",\n  \"county\": \"Nairobi\",\n  \"postal_code\": \"00100\",\n  \"contact_phone\": \"{{mpesaPhone}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/order/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["order", "create"]
+            },
+            "description": "Postpay order - delivery fee 200 added for Nairobi"
+          }
+        },
+        {
+          "name": "Create Order (Postpay + Outside Nairobi)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payment_method\": \"mpesa\",\n  \"payment_timing\": \"postpay\",\n  \"delivery_option\": \"outside\",\n  \"street\": \"Main St\",\n  \"city\": \"Mombasa\",\n  \"county\": \"Mombasa\",\n  \"postal_code\": \"80100\",\n  \"contact_phone\": \"{{mpesaPhone}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/order/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["order", "create"]
+            },
+            "description": "No delivery fee added"
+          }
+        },
+        {
+          "name": "Get My Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/order/my-orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["order", "my-orders"]
+            }
+          }
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/order/{{orderId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["order", "{{orderId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get All Orders (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/order/all",
+              "host": ["{{baseUrl}}"],
+              "path": ["order", "all"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "M-Pesa (Daraja)",
+      "item": [
+        {
+          "name": "Initiate STK Push (M-Pesa)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"STK Push initiated successfully\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json()).to.have.property('success', true);",
+                  "    pm.expect(pm.response.json()).to.have.property('checkout_request_id');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{mpesaPhone}}\",\n  \"amount\": 10,\n  \"order_id\": {{orderId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/mpesa/stk-push",
+              "host": ["{{baseUrl}}"],
+              "path": ["mpesa", "stk-push"]
+            },
+            "description": "Triggers real M-Pesa STK Push (sandbox: phone 254708374149, PIN 254708)"
+          }
+        }
+      ],
+      "description": "Real M-Pesa Daraja STK Push integration"
     }
   ]
 }

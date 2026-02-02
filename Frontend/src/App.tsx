@@ -11,6 +11,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./Context/AuthContext";
 import { CartProvider } from "./Context/CartContext";
 import Contact from "./pages/Contact";
+import Payment from "./payment/Payment";
+import Orders from "./order/OrdersHistory";
 
 const AppContent = () => {
   const location = useLocation();
@@ -52,6 +54,8 @@ const AppContent = () => {
         />
         <Route path="/product/:id" element={<ProductDetails />} />
         <Route path="/contact" element={<Contact/>} />
+        <Route path="/checkout" element={<Payment/>} />
+        <Route path="/orders" element={<Orders/>} />
       </Routes>
 
       {shouldShowCartButton && <FloatingCartButton />}
