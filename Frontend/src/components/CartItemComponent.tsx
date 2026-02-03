@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react"; // Added useState for error handling
+import { useCallback, useState } from "react";
 import { useCart } from "../Context/useCart";
 import { type CartItem } from "../types";
 
@@ -8,7 +8,7 @@ interface CartItemProps {
 
 const CartItemComponent = ({ item }: CartItemProps) => {
   const { updateCartItem, removeFromCart, isLoading } = useCart();
-  const [imageError, setImageError] = useState(false); // Track image load errors
+  const [imageError, setImageError] = useState(false);
 
   const handleQuantityChange = useCallback(
     async (quantity: number) => {
@@ -21,16 +21,14 @@ const CartItemComponent = ({ item }: CartItemProps) => {
     [item.id, updateCartItem, removeFromCart]
   );
 
-  // Handle image load failure
   const handleImageError = useCallback(() => {
     console.error(`Failed to load image for ${item.name}: ${item.image1}`);
     setImageError(true);
   }, [item.name, item.image1]);
 
-  // Determine image source
   const imageSrc = item.image1 && !imageError
     ? item.image1
-    : "https://picsum.photos/80/80"; // Reliable fallback
+    : "https://picsum.photos/80/80";
 
   return (
     <div className="flex items-center gap-4 py-4 border-b border-white/10">
@@ -40,7 +38,7 @@ const CartItemComponent = ({ item }: CartItemProps) => {
           alt={item.name}
           className="w-full h-full object-cover rounded-lg"
           loading="lazy"
-          onError={handleImageError} // Handle load errors
+          onError={handleImageError}
         />
       </div>
       <div className="flex-1">
@@ -48,23 +46,24 @@ const CartItemComponent = ({ item }: CartItemProps) => {
           {item.name}
         </h3>
         <p className="text-sm text-slate-400 mt-1">
-          ${item.price.toFixed(2)} each
+          KSh {item.price.toFixed(2)} each
         </p>
         <div className="flex items-center gap-2 mt-2">
           <button
             onClick={() => handleQuantityChange(item.quantity - 1)}
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/10 bg-slate-800/70 text-slate-100 hover:bg-slate-800/90 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-white/30 bg-slate-800/70 text-slate-100 hover:bg-slate-800/90 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 disabled:opacity-50 disabled:cursor-not-allowed text-xl font-bold"
             aria-label={`Decrease quantity of ${item.name}`}
             disabled={isLoading || item.quantity <= 1}
           >
             -
           </button>
-          <span className="text-sm text-slate-100 w-8 text-center">
+          {/* Quantity - Made SUPER CLEAR & VISIBLE */}
+          <span className="text-xl font-bold text-cyan-300 w-12 text-center px-2 py-1 bg-slate-800/90 rounded-lg border border-white/20 shadow-md">
             {item.quantity}
           </span>
           <button
             onClick={() => handleQuantityChange(item.quantity + 1)}
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-white/10 bg-slate-800/70 text-slate-100 hover:bg-slate-800/90 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-10 h-10 flex items-center justify-center rounded-lg border-2 border-white/30 bg-slate-800/70 text-slate-100 hover:bg-slate-800/90 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 disabled:opacity-50 disabled:cursor-not-allowed text-xl font-bold"
             aria-label={`Increase quantity of ${item.name}`}
             disabled={isLoading || (!!item.stock && item.quantity >= item.stock)}
           >
@@ -81,7 +80,7 @@ const CartItemComponent = ({ item }: CartItemProps) => {
         </div>
       </div>
       <p className="text-sm font-semibold text-cyan-400">
-        ${(item.price * item.quantity).toFixed(2)}
+        KSh {(item.price * item.quantity).toFixed(2)}
       </p>
     </div>
   );

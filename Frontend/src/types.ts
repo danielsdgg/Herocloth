@@ -1,7 +1,10 @@
+// types.ts
 export interface User {
   id: number;
-  username: string;
+  firstname: string;
+  lastname: string;
   email: string;
+  phone: string | null;
   role: string;
 }
 
@@ -24,13 +27,18 @@ export interface CartItem {
   quantity: number;
   price: number;
   image1: string;
-  stock?: number; // Add stock as optional or required based on backend
+  stock?: number; // Optional, in case backend includes it
 }
 
 export interface LoginResponse {
   access_token: string;
   refresh_token: string;
   role: string;
-  username: string;
-  userId: number;
+  user: {
+    id: number;
+    firstname: string;
+    lastname: string;
+    email: string;
+    phone: string | null;
+  };
 }

@@ -8,706 +8,502 @@ import Navbar from "../components/Navbar";
 
 interface User {
   id: number;
-  username: string;
+  firstname: string;
+  lastname: string;
   email: string;
+  phone: string | null;
   role: "user" | "admin";
 }
 
+interface Review {
+  id: number;
+  rating: number;
+  comment: string;
+  created_at: string;
+  user: { id: number; firstname: string; lastname: string };
+  product: { id: number; name: string; image1: string };
+}
+
 const AdminDashboard = () => {
-  const { token, username, userId, setAuth } = useAuth();
+  const { token, firstname, lastname, userId, setAuth } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [userSearch, setUserSearch] = useState("");
   const [newProduct, setNewProduct] = useState({
-    name: "",
-    description: "",
-    price: 0,
-    stock: 0,
-    image1: "",
-    image2: "",
-    image3: "",
-    category: "",
+    name: "", description: "", price: 0, stock: 0,
+    image1: "", image2: "", image3: "", category: "",
   });
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [editUser, setEditUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<"users" | "products" | "create" | "reviews">("users");
 
-  // Fetch all products
+  // Close sidebar when section changes on mobile
   useEffect(() => {
-    const fetchProducts = async () => {
+    if (window.innerWidth < 1024) setSidebarOpen(false);
+  }, [activeSection]);
+
+  // Fetch products
+  useEffect(() => {
+    if (!token) return;
+    const fetch = async () => {
       setIsLoading(true);
-      setError(null);
       try {
         const api = createApiInstance(token);
-        const response = await api.get<Product[]>("/product/", { withCredentials: true });
-        setProducts(response.data);
-      } catch (error: unknown) {
-        const message =
-          (error as { response?: { data?: { msg: string } } }).response?.data?.msg ||
-          "Failed to fetch products.";
-        setError(message);
-        toast.error(message);
+        const res = await api.get<Product[]>("/product/", { withCredentials: true });
+        setProducts(res.data);
+      } catch {
+        toast.error("Failed to fetch products");
       } finally {
         setIsLoading(false);
       }
     };
-    if (token) fetchProducts();
+    fetch();
   }, [token]);
 
-  // Fetch all users
+  // Fetch users
   useEffect(() => {
-    const fetchUsers = async () => {
+    if (!token) return;
+    const fetch = async () => {
       setIsLoading(true);
-      setError(null);
       try {
         const api = createApiInstance(token);
-        const response = await api.get<User[]>("/user/all", { withCredentials: true });
-        setUsers(response.data);
-      } catch (error: unknown) {
-        const message =
-          (error as { response?: { data?: { msg: string } } }).response?.data?.msg ||
-          "Failed to fetch users.";
-        setError(message);
-        toast.error(message);
+        const res = await api.get<User[]>("/user/all", { withCredentials: true });
+        setUsers(res.data);
+      } catch {
+        toast.error("Failed to fetch users");
       } finally {
         setIsLoading(false);
       }
     };
-    if (token) fetchUsers();
+    fetch();
   }, [token]);
 
-  // Filter users based on search
+  // Fetch reviews when section is active
+  useEffect(() => {
+    if (!token || activeSection !== "reviews") return;
+    const fetch = async () => {
+      setIsLoading(true);
+      try {
+        const api = createApiInstance(token);
+        const prods = await api.get<Product[]>("/product/");
+        const all: Review[] = [];
+
+        for (const p of prods.data) {
+          try {
+            const revs = await api.get(`/review/product/${p.id}/reviews`);
+            revs.data.forEach((r: any) => all.push({
+              ...r,
+              product: { id: p.id, name: p.name, image1: p.image1 || "https://via.placeholder.com/400x400?text=No+Image" },
+            }));
+          } catch {}
+        }
+
+        all.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        setReviews(all);
+      } catch {
+        toast.error("Failed to load reviews");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetch();
+  }, [token, activeSection]);
+
   const filteredUsers = useMemo(() => {
-    const lowerSearch = userSearch.toLowerCase();
-    return users.filter(
-      (user) =>
-        user.username.toLowerCase().includes(lowerSearch) ||
-        user.email.toLowerCase().includes(lowerSearch)
-    );
+    const q = userSearch.toLowerCase();
+    return users.filter(u => `${u.firstname} ${u.lastname}`.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
   }, [users, userSearch]);
 
-  // Validate product inputs
-  const validateProduct = useCallback((product: Partial<Product>) => {
-    if (!product.name || product.name.trim() === "") return "Product name is required.";
-    if (product.price! <= 0) return "Price must be greater than 0.";
-    if (product.stock! < 0) return "Stock cannot be negative.";
-    if (!product.image1 || product.image1.trim() === "") return "At least one image URL is required.";
-    if (!product.category || product.category.trim() === "") return "Category is required.";
-    const validCategories = ["tops", "bottoms", "dresses", "outerwear", "shirts", "sweaters"];
-    if (!validCategories.includes(product.category)) return `Category must be one of: ${validCategories.join(", ")}`;
+  const validateProduct = useCallback((p: Partial<Product>) => {
+    if (!p.name?.trim()) return "Product name is required.";
+    if ((p.price ?? 0) <= 0) return "Price must be > 0.";
+    if ((p.stock ?? 0) < 0) return "Stock cannot be negative.";
+    if (!p.image1?.trim()) return "At least one image URL required.";
+    if (!p.category?.trim()) return "Category is required.";
+    const cats = ["tops", "bottoms", "dresses", "outerwear", "shirts", "sweaters"];
+    if (!cats.includes(p.category!)) return `Category must be one of: ${cats.join(", ")}`;
     return null;
   }, []);
 
-  // Create a product
   const handleCreate = useCallback(async () => {
-    const validationError = validateProduct(newProduct);
-    if (validationError) {
-      toast.error(validationError);
-      return;
-    }
+    const err = validateProduct(newProduct);
+    if (err) return toast.error(err);
     setIsLoading(true);
-    setError(null);
     try {
       const api = createApiInstance(token);
-      const response = await api.post<Product>("/product/", newProduct, { withCredentials: true });
-      setProducts([...products, response.data]);
-      setNewProduct({
-        name: "",
-        description: "",
-        price: 0,
-        stock: 0,
-        image1: "",
-        image2: "",
-        image3: "",
-        category: "",
-      });
-      toast.success("Product created successfully!");
-    } catch (error: unknown) {
-      const message =
-        (error as { response?: { data?: { msg: string } } }).response?.data?.msg ||
-        "Failed to create product.";
-      setError(message);
-      toast.error(message);
+      const res = await api.post<Product>("/product/", newProduct, { withCredentials: true });
+      setProducts(prev => [...prev, res.data]);
+      setNewProduct({ name: "", description: "", price: 0, stock: 0, image1: "", image2: "", image3: "", category: "" });
+      toast.success("Product created!");
+    } catch {
+      toast.error("Failed to create product");
     } finally {
       setIsLoading(false);
     }
-  }, [newProduct, products, token, validateProduct]);
+  }, [newProduct, token, validateProduct]);
 
-  // Update a product
   const handleUpdate = useCallback(async () => {
     if (!editProduct) return;
-    const validationError = validateProduct(editProduct);
-    if (validationError) {
-      toast.error(validationError);
-      return;
-    }
+    const err = validateProduct(editProduct);
+    if (err) return toast.error(err);
     setIsLoading(true);
-    setError(null);
     try {
       const api = createApiInstance(token);
-      const updatePayload = {
-        name: editProduct.name,
-        description: editProduct.description,
-        price: editProduct.price,
-        stock: editProduct.stock,
-        image1: editProduct.image1,
-        image2: editProduct.image2,
-        image3: editProduct.image3,
-        category: editProduct.category,
+      const payload = {
+        name: editProduct.name, description: editProduct.description,
+        price: editProduct.price, stock: editProduct.stock,
+        image1: editProduct.image1, image2: editProduct.image2,
+        image3: editProduct.image3, category: editProduct.category,
       };
-      const response = await api.put<Product>(`/product/${editProduct.id}`, updatePayload, { withCredentials: true });
-      setProducts(products.map((p) => (p.id === editProduct.id ? response.data : p)));
+      const res = await api.put<Product>(`/product/${editProduct.id}`, payload, { withCredentials: true });
+      setProducts(prev => prev.map(p => p.id === editProduct.id ? res.data : p));
       setEditProduct(null);
-      toast.success("Product updated successfully!");
-    } catch (error: unknown) {
-      const message =
-        (error as { response?: { data?: { msg: string } } }).response?.data?.msg ||
-        "Failed to update product.";
-      setError(message);
-      toast.error(message);
+      toast.success("Product updated!");
+    } catch {
+      toast.error("Failed to update product");
     } finally {
       setIsLoading(false);
     }
-  }, [editProduct, products, token, validateProduct]);
+  }, [editProduct, token, validateProduct]);
 
-  // Delete a product
-  const handleDelete = useCallback(
-    async (id: number) => {
-      if (!window.confirm("Are you sure you want to delete this product?")) return;
-      setIsLoading(true);
-      setError(null);
-      try {
-        const api = createApiInstance(token);
-        await api.delete(`/product/${id}`, { withCredentials: true });
-        setProducts(products.filter((p) => p.id !== id));
-        toast.success("Product deleted successfully!");
-      } catch (error: unknown) {
-        const message =
-          (error as { response?: { data?: { msg: string } } }).response?.data?.msg ||
-          "Failed to delete product.";
-        setError(message);
-        toast.error(message);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [products, token]
-  );
-
-  // Update user role
-  const handleUpdateUserRole = useCallback(async () => {
-    if (!editUser) return;
-    if (!editUser.role) {
-      toast.error("Role is required.");
-      return;
-    }
+  const handleDelete = useCallback(async (id: number) => {
+    if (!window.confirm("Delete this product?")) return;
     setIsLoading(true);
-    setError(null);
     try {
       const api = createApiInstance(token);
-      const response = await api.put<User>(`/user/${editUser.id}`, { role: editUser.role }, { withCredentials: true });
-      setUsers(users.map((u) => (u.id === editUser.id ? response.data : u)));
-      if (editUser.id === userId) {
-        setAuth(token!, "", response.data.role, response.data.username, response.data.id);
-      }
-      setEditUser(null);
-      toast.success("User role updated successfully!");
-    } catch (error: unknown) {
-      const message =
-        (error as { response?: { data?: { msg: string } } }).response?.data?.msg ||
-        "Failed to update user role.";
-      setError(message);
-      toast.error(message);
+      await api.delete(`/product/${id}`, { withCredentials: true });
+      setProducts(prev => prev.filter(p => p.id !== id));
+      toast.success("Product deleted");
+    } catch {
+      toast.error("Failed to delete product");
     } finally {
       setIsLoading(false);
     }
-  }, [editUser, users, token, userId, setAuth]);
+  }, [token]);
 
-  // Delete a user
-  const handleDeleteUser = useCallback(
-    async (id: number) => {
-      if (id === userId) {
-        toast.error("Cannot delete your own admin account.");
-        return;
-      }
-      if (!window.confirm("Are you sure you want to delete this user?")) return;
-      setIsLoading(true);
-      setError(null);
-      try {
-        const api = createApiInstance(token);
-        await api.delete(`/user/${id}`, { withCredentials: true });
-        setUsers(users.filter((u) => u.id !== id));
-        toast.success("User deleted successfully!");
-      } catch (error: unknown) {
-        const message =
-          (error as { response?: { data?: { msg: string } } }).response?.data?.msg ||
-          "Failed to delete user.";
-        setError(message);
-        toast.error(message);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [users, token, userId]
-  );
+  const handleUpdateUserRole = useCallback(async () => {
+    if (!editUser || !editUser.role) return toast.error("Role required");
+    setIsLoading(true);
+    try {
+      const api = createApiInstance(token);
+      const res = await api.put<User>(`/user/${editUser.id}`, { role: editUser.role }, { withCredentials: true });
+      setUsers(prev => prev.map(u => u.id === editUser.id ? res.data : u));
+      if (editUser.id === userId) setAuth(token!, "", res.data.role, res.data.firstname, res.data.lastname, res.data.id);
+      setEditUser(null);
+      toast.success("Role updated");
+    } catch {
+      toast.error("Failed to update role");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [editUser, token, userId, setAuth]);
+
+  const handleDeleteUser = useCallback(async (id: number) => {
+    if (id === userId) return toast.error("Cannot delete yourself");
+    if (!window.confirm("Delete this user?")) return;
+    setIsLoading(true);
+    try {
+      const api = createApiInstance(token);
+      await api.delete(`/user/${id}`, { withCredentials: true });
+      setUsers(prev => prev.filter(u => u.id !== id));
+      toast.success("User deleted");
+    } catch {
+      toast.error("Failed to delete user");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [token, userId]);
+
+  const inputFields = [
+    { key: "name", label: "Product Name *", type: "text" },
+    { key: "description", label: "Description", type: "text" },
+    { key: "price", label: "Price (KES) *", type: "number" },
+    { key: "stock", label: "Stock Quantity *", type: "number" },
+    { key: "image1", label: "Image 1 URL *", type: "text" },
+    { key: "image2", label: "Image 2 URL", type: "text" },
+    { key: "image3", label: "Image 3 URL", type: "text" },
+  ];
 
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-slate-950 text-slate-100">
-        {/* Ambient gradient glows */}
-        <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute -top-20 -left-24 h-80 w-80 rounded-full bg-cyan-500/20 blur-3xl" />
-          <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-indigo-500/20 blur-3xl" />
-        </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          {/* Header */}
-          <header className="mb-12 text-center">
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className="relative inline-block"
-            >
-              <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-500 animate-fade-in">
-                Admin Dashboard
-              </h1>
-              <motion.div
-                className="absolute -bottom-2 left-10 h-1 w-32 rounded bg-gradient-to-r from-cyan-400 to-indigo-500 opacity-50"
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: 1 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              />
-            </motion.div>
-            <p className="text-lg text-slate-300 mt-3 max-w-2xl mx-auto animate-fade-in">
-              Welcome, {username || "Admin"}! Manage your e-commerce platform with ease.
-            </p>
+      <div className="min-h-screen bg-black text-white flex flex-col lg:flex-row">
+        {/* Mobile Sidebar Toggle */}
+        <button
+          className="lg:hidden fixed mt-16 top-4 left-4 z-50 p-3 bg-white/4 rounded-full"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+        >
+          <span className="text-white text-xl">☰</span>
+        </button>
+
+        {/* Sidebar */}
+        <aside
+          className={`fixed inset-y-0 left-0 z-40 w-72 bg-white/5 backdrop-blur-2xl border-r border-white/10 transform transition-transform duration-300 lg:relative lg:translate-x-0 ${
+            sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } lg:flex lg:flex-col`}
+        >
+          <div className="p-10">
+            <h2 className="text-2xl mt-25 font-extralight tracking-widest mb-16 text-gray-300">Admin Panel</h2>
+            <nav className="space-y-3">
+              {["users", "create", "products", "reviews"].map(sec => (
+                <button
+                  key={sec}
+                  onClick={() => {
+                    setActiveSection(sec as any);
+                    setSidebarOpen(false);
+                  }}
+                  className={`w-full text-left px-8 py-5 rounded-3xl transition text-base font-light ${
+                    activeSection === sec ? "bg-white/10 border border-white/20 shadow-lg" : "hover:bg-white/5"
+                  }`}
+                >
+                  {sec === "users" ? "Manage Users" : sec === "create" ? "Create Product" : sec === "products" ? "Manage Products" : "View Reviews"}
+                </button>
+              ))}
+            </nav>
+          </div>
+          <div className="mt-auto p-10">
+            <p className="text-xs text-gray-500">Logged in as</p>
+            <p className="text-sm font-light">{firstname} {lastname}</p>
+          </div>
+        </aside>
+
+        {/* Overlay for mobile sidebar */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/60 z-30 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* Main Content */}
+        <main className="flex-1 p-6 sm:p-10 lg:p-16 overflow-y-auto">
+          <header className="mt-9 mb-12 sm:mb-20">
+            <h1 className="text-5xl sm:text-6xl font-extralight tracking-widest mb-4">Dashboard</h1>
+            <p className="text-lg sm:text-xl text-gray-400 font-light">Welcome back, {firstname} {lastname}.</p>
           </header>
 
-          {/* Error Message */}
-          {error && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              role="alert"
-              aria-live="assertive"
-              className="mb-8 rounded-lg bg-rose-500/10 px-6 py-4 text-sm text-rose-300 text-center shadow-md shadow-black/20"
-            >
-              {error}
-            </motion.div>
-          )}
-
-          {/* Loading State */}
           {isLoading && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="mb-8 text-center"
-            >
-              <div
-                className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-cyan-400 border-t-transparent"
-                role="status"
-                aria-label="Loading data"
-              ></div>
-              <p className="text-slate-400 font-medium mt-4">Loading data...</p>
-            </motion.div>
+            <div className="text-center py-20 sm:py-32">
+              <div className="inline-block h-10 w-10 sm:h-12 sm:w-12 animate-spin rounded-full border-4 border-white border-t-transparent" />
+            </div>
           )}
 
-          {/* Manage Users */}
-          <motion.section
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="mb-12"
-          >
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-500">
-                Manage Users
-              </h2>
-              <p className="text-sm text-slate-400">Total Users: {users.length}</p>
-            </div>
-            <div className="mb-4">
-              <input
-                type="text"
-                placeholder="Search users by username or email..."
-                value={userSearch}
-                onChange={(e) => setUserSearch(e.target.value)}
-                className="w-full sm:w-1/3 rounded-lg bg-slate-800/70 border border-white/10 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
-                aria-label="Search users"
-              />
-            </div>
-            {filteredUsers.length === 0 && !isLoading ? (
-              <p className="text-slate-400 text-center text-lg animate-fade-in">
-                {userSearch ? "No users match your search." : "No users available."}
-              </p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full rounded-2xl bg-slate-900/70 backdrop-blur-lg shadow-xl shadow-black/30 border border-white/10">
-                  <thead>
-                    <tr className="border-b border-white/10">
-                      <th className="px-6 py-4 text-left text-sm font-medium text-slate-300">Username</th>
-                      <th className="px-6 py-4 text-left text-sm font-medium text-slate-300">Email</th>
-                      <th className="px-6 py-4 text-left text-sm font-medium text-slate-300">Role</th>
-                      <th className="px-6 py-4 text-left text-sm font-medium text-slate-300">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredUsers.map((user) => (
-                      <tr
-                        key={user.id}
-                        className="border-b border-white/10 last:border-0 hover:bg-slate-800/50 transition-all duration-200"
-                      >
-                        <td className="px-6 py-4 text-sm text-slate-100">{user.username}</td>
-                        <td className="px-6 py-4 text-sm text-slate-100">{user.email}</td>
-                        <td className="px-6 py-4 text-sm text-slate-100 capitalize">
-                          {user.role}
-                        </td>
-                        <td className="px-6 py-4 flex gap-2">
-                          <button
-                            onClick={() => setEditUser(user)}
-                            className="rounded-lg bg-slate-800/70 border border-white/10 px-4 py-2 text-sm text-slate-100 font-medium hover:bg-slate-800/90 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all duration-200 hover:scale-105"
-                            aria-label={`Edit role for ${user.username}`}
-                          >
-                            Edit Role
-                          </button>
-                          <button
-                            onClick={() => handleDeleteUser(user.id)}
-                            disabled={user.id === userId}
-                            className="rounded-lg bg-rose-500/90 px-4 py-2 text-sm text-white font-medium hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-500/40 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-                            aria-label={`Delete ${user.username}`}
-                          >
-                            Delete
-                          </button>
-                        </td>
+          <AnimatePresence mode="wait">
+            {/* Users Section */}
+            {activeSection === "users" && (
+              <motion.div key="users" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }}>
+                <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <h2 className="text-3xl sm:text-4xl font-extralight tracking-widest">Users</h2>
+                  <p className="text-gray-500 text-base sm:text-lg">Total: {users.length}</p>
+                </div>
+
+                <input
+                  type="text"
+                  placeholder="Search by name or email..."
+                  value={userSearch}
+                  onChange={e => setUserSearch(e.target.value)}
+                  className="w-full max-w-lg px-6 py-4 bg-white/10 border border-white/20 rounded-3xl placeholder-gray-500 focus:border-white/50 outline-none mb-8 text-sm"
+                />
+
+                <div className="overflow-x-auto bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl">
+                  <table className="w-full min-w-[640px]">
+                    <thead className="bg-white/5 border-b border-white/10">
+                      <tr>
+                        <th className="px-6 py-6 text-left text-xs uppercase tracking-widest text-gray-500">Name</th>
+                        <th className="px-6 py-6 text-left text-xs uppercase tracking-widest text-gray-500">Email</th>
+                        <th className="px-6 py-6 text-left text-xs uppercase tracking-widest text-gray-500">Phone</th>
+                        <th className="px-6 py-6 text-left text-xs uppercase tracking-widest text-gray-500">Role</th>
+                        <th className="px-6 py-6 text-left text-xs uppercase tracking-widest text-gray-500">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {filteredUsers.length === 0 ? (
+                        <tr><td colSpan={5} className="text-center py-16 text-gray-500 text-base">{userSearch ? "No matching users" : "No users available"}</td></tr>
+                      ) : filteredUsers.map(u => (
+                        <tr key={u.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                          <td className="px-6 py-6 text-sm font-light whitespace-nowrap">{u.firstname} {u.lastname}</td>
+                          <td className="px-6 py-6 text-sm text-gray-400 whitespace-nowrap">{u.email}</td>
+                          <td className="px-6 py-6 text-sm text-gray-400 whitespace-nowrap">{u.phone || "—"}</td>
+                          <td className="px-6 py-6 text-sm capitalize">{u.role}</td>
+                          <td className="px-6 py-6 flex flex-col sm:flex-row gap-3">
+                            <button onClick={() => setEditUser(u)} className="px-6 py-3 bg-white/10 border border-white/20 rounded-xl hover:bg-white/20 text-xs">Edit Role</button>
+                            <button onClick={() => handleDeleteUser(u.id)} disabled={u.id === userId}
+                              className="px-6 py-3 bg-red-900/20 border border-red-900/50 rounded-xl hover:bg-red-900/30 text-xs disabled:opacity-50">Delete</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </motion.div>
             )}
-          </motion.section>
 
-          {/* Manage Payments (Placeholder) */}
-          <motion.section
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 }}
-            className="mb-12 rounded-2xl bg-slate-900/70 backdrop-blur-lg shadow-xl shadow-black/30 border border-white/10 p-8"
-          >
-            <h2 className="text-2xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-500 mb-6">
-              Manage Payments
-            </h2>
-            <p className="text-slate-400 text-center text-lg">
-              The Payment and purchase management section will be available soon.!
-            </p>
-          </motion.section>
-
-          {/* Create Product Form */}
-          <motion.section
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
-            className="mb-12 rounded-2xl bg-slate-900/70 backdrop-blur-lg shadow-xl shadow-black/30 border border-white/10 p-8"
-          >
-            <h2 className="text-2xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-500 mb-6">
-              Create New Product
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <input
-                type="text"
-                placeholder="Product Name *"
-                value={newProduct.name}
-                onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                className="rounded-lg bg-slate-800/70 border border-white/10 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
-                required
-                aria-label="Product name"
-              />
-              <input
-                type="text"
-                placeholder="Description"
-                value={newProduct.description}
-                onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-                className="rounded-lg bg-slate-800/70 border border-white/10 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
-                aria-label="Product description"
-              />
-              <input
-                type="number"
-                placeholder="Price *"
-                value={newProduct.price || ""}
-                onChange={(e) =>
-                  setNewProduct({ ...newProduct, price: parseFloat(e.target.value) || 0 })
-                }
-                className="rounded-lg bg-slate-800/70 border border-white/10 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
-                min="0"
-                step="0.01"
-                required
-                aria-label="Product price"
-              />
-              <input
-                type="number"
-                placeholder="Stock *"
-                value={newProduct.stock || ""}
-                onChange={(e) =>
-                  setNewProduct({ ...newProduct, stock: parseInt(e.target.value) || 0 })
-                }
-                className="rounded-lg bg-slate-800/70 border border-white/10 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
-                min="0"
-                required
-                aria-label="Product stock"
-              />
-              <input
-                type="text"
-                placeholder="Image 1 URL *"
-                value={newProduct.image1}
-                onChange={(e) => setNewProduct({ ...newProduct, image1: e.target.value })}
-                className="rounded-lg bg-slate-800/70 border border-white/10 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
-                required
-                aria-label="Primary product image URL"
-              />
-              <input
-                type="text"
-                placeholder="Image 2 URL (Optional)"
-                value={newProduct.image2}
-                onChange={(e) => setNewProduct({ ...newProduct, image2: e.target.value })}
-                className="rounded-lg bg-slate-800/70 border border-white/10 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
-                aria-label="Secondary product image URL"
-              />
-              <input
-                type="text"
-                placeholder="Image 3 URL (Optional)"
-                value={newProduct.image3}
-                onChange={(e) => setNewProduct({ ...newProduct, image3: e.target.value })}
-                className="rounded-lg bg-slate-800/70 border border-white/10 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
-                aria-label="Tertiary product image URL"
-              />
-              <select
-                value={newProduct.category}
-                onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
-                className="rounded-lg bg-slate-800/70 border border-white/10 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
-                required
-                aria-label="Product category"
-              >
-                <option value="" disabled>Select Category *</option>
-                <option value="tops">Tops</option>
-                <option value="bottoms">Bottoms</option>
-                <option value="dresses">Dresses</option>
-                <option value="outerwear">Outerwear</option>
-                <option value="shirts">Shirts</option>
-                <option value="sweaters">Sweaters</option>
-              </select>
-            </div>
-            <button
-              onClick={handleCreate}
-              disabled={isLoading}
-              className="group mt-6 w-full sm:w-auto relative inline-flex items-center justify-center overflow-hidden rounded-xl bg-gradient-to-r from-cyan-500 via-sky-500 to-indigo-500 px-6 py-3 font-medium text-white shadow-lg shadow-cyan-500/20 transition-all duration-200 hover:from-cyan-400 hover:via-sky-400 hover:to-indigo-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
-              aria-label="Create new product"
-            >
-              <span className="absolute inset-0 -z-10 opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-30 bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-indigo-500" />
-              {isLoading ? "Creating..." : "Create Product"}
-            </button>
-          </motion.section>
-
-          {/* Manage Products */}
-          <motion.section
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-            className="mb-12"
-          >
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-500">
-                Manage Products
-              </h2>
-              <p className="text-sm text-slate-400">Total Products: {products.length}</p>
-            </div>
-            {products.length === 0 && !isLoading ? (
-              <p className="text-slate-400 text-center text-lg animate-fade-in">
-                No products available. Create one to get started!
-              </p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {products.map((product) => (
-                  <motion.div
-                    key={product.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="group rounded-2xl bg-slate-900/70 backdrop-blur-lg shadow-xl shadow-black/30 border border-white/10 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
-                  >
-                    <div className="relative w-full h-48 overflow-hidden">
-                      <img
-                        src={
-                          product.image1 ||
-                          "https://via.placeholder.com/300x300?text=No+Image"
-                        }
-                        alt={product.name}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                    </div>
-                    <div className="p-6">
-                      <h3 className="text-lg font-semibold text-slate-100 truncate">
-                        {product.name}
-                      </h3>
-                      <p className="text-sm text-slate-400 mt-2 line-clamp-2">
-                        {product.description || "No description"}
-                      </p>
-                      <p className="text-xl font-semibold text-cyan-400 mt-2">
-                        ${product.price.toFixed(2)}
-                      </p>
-                      <p className="text-sm text-slate-400">Stock: {product.stock}</p>
-                      <p className="text-sm text-slate-400 capitalize">
-                        Category: {product.category}
-                      </p>
-                      <div className="mt-4 flex gap-2">
-                        <button
-                          onClick={() => setEditProduct(product)}
-                          className="flex-1 rounded-lg bg-slate-800/70 border border-white/10 px-4 py-2 text-slate-100 font-medium hover:bg-slate-800/90 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all duration-200 hover:scale-105"
-                          aria-label={`Edit ${product.name}`}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(product.id)}
-                          className="flex-1 rounded-lg bg-rose-500/90 px-4 py-2 text-white font-medium hover:bg-rose-600 focus:outline-none focus:ring-2 focus:ring-rose-500/40 transition-all duration-200 hover:scale-105"
-                          aria-label={`Delete ${product.name}`}
-                        >
-                          Delete
-                        </button>
+            {/* Create Product */}
+            {activeSection === "create" && (
+              <motion.div key="create" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }}>
+                <h2 className="text-3xl sm:text-4xl font-extralight tracking-widest mb-12">Create New Product</h2>
+                <div className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-8 sm:p-16 shadow-2xl">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-10">
+                    {inputFields.map(({ key, label, type = "text" }) => (
+                      <div key={key}>
+                        <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2">{label}</label>
+                        <input
+                          type={type}
+                          value={newProduct[key as keyof typeof newProduct] as string | number}
+                          onChange={e => setNewProduct(prev => ({
+                            ...prev,
+                            [key]: type === "number" ? (key === "price" ? parseFloat(e.target.value) || 0 : parseInt(e.target.value) || 0) : e.target.value
+                          }))}
+                          className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-3xl placeholder-gray-500 focus:border-white/50 outline-none text-sm"
+                          required={label.includes("*")}
+                        />
                       </div>
+                    ))}
+                    <div>
+                      <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2">Category *</label>
+                      <select value={newProduct.category} onChange={e => setNewProduct(prev => ({ ...prev, category: e.target.value }))}
+                        className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-3xl text-black focus:border-white/50 text-sm" required>
+                        <option value="" disabled>Select Category</option>
+                        {["tops","bottoms","dresses","outerwear","shirts","sweaters"].map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+                      </select>
                     </div>
-                  </motion.div>
-                ))}
-              </div>
+                  </div>
+                  <button onClick={handleCreate} disabled={isLoading}
+                    className="mt-12 w-full sm:w-auto px-16 py-5 bg-white text-black font-medium uppercase tracking-widest rounded-3xl hover:bg-gray-100 disabled:opacity-60 text-sm">
+                    {isLoading ? "Creating..." : "Create Product"}
+                  </button>
+                </div>
+              </motion.div>
             )}
-          </motion.section>
+
+            {/* Products */}
+            {activeSection === "products" && (
+              <motion.div key="products" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }}>
+                <div className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <h2 className="text-3xl sm:text-4xl font-extralight tracking-widest">Products</h2>
+                  <p className="text-gray-500 text-base sm:text-lg">Total: {products.length}</p>
+                </div>
+                {products.length === 0 ? (
+                  <p className="text-center py-20 sm:py-32 text-gray-400 text-base sm:text-lg">No products yet.</p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-12">
+                    {products.map(p => (
+                      <motion.div key={p.id} whileHover={{ y: -8 }} className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
+                        <div className="aspect-[4/5] sm:aspect-square overflow-hidden">
+                          <img src={p.image1 || "https://via.placeholder.com/500x600?text=No+Image"} alt={p.name}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
+                        </div>
+                        <div className="p-6 sm:p-10">
+                          <h3 className="text-lg sm:text-xl font-light truncate mb-3">{p.name}</h3>
+                          <p className="text-gray-400 text-xs sm:text-sm line-clamp-2 mb-4">{p.description || "No description"}</p>
+                          <p className="text-2xl sm:text-3xl font-extralight mb-3">Ksh {p.price.toFixed(2)}</p>
+                          <p className="text-xs uppercase tracking-widest text-gray-500 mb-2">Stock: {p.stock}</p>
+                          <p className="text-xs uppercase tracking-widest text-gray-500 mb-6">Category: {p.category}</p>
+                          <div className="flex flex-col sm:flex-row gap-3">
+                            <button onClick={() => setEditProduct(p)} className="flex-1 py-3 bg-white/10 border border-white/20 rounded-2xl hover:bg-white/20 text-xs">Edit</button>
+                            <button onClick={() => handleDelete(p.id)} className="flex-1 py-3 bg-red-900/20 border border-red-900/50 rounded-2xl hover:bg-red-900/30 text-xs">Delete</button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* Reviews */}
+            {activeSection === "reviews" && (
+              <motion.div key="reviews" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }}>
+                <div className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <h2 className="text-3xl sm:text-4xl font-extralight tracking-widest">Customer Reviews</h2>
+                  <p className="text-gray-500 text-base sm:text-lg">Total: {reviews.length}</p>
+                </div>
+                {reviews.length === 0 ? (
+                  <p className="text-center py-20 sm:py-32 text-gray-400 text-base sm:text-lg">No reviews yet.</p>
+                ) : (
+                  <div className="space-y-8 sm:space-y-12">
+                    {reviews.map(r => (
+                      <motion.div key={r.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                        className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-6 sm:p-12 shadow-2xl">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-10">
+                          <div>
+                            <div className="aspect-square bg-gray-200 rounded-2xl overflow-hidden mb-4">
+                              <img src={r.product.image1} alt={r.product.name} className="w-full h-full object-cover" />
+                            </div>
+                            <p className="text-sm font-light text-center text-gray-300">{r.product.name}</p>
+                          </div>
+                          <div className="md:col-span-2 flex flex-col justify-between">
+                            <div>
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 mb-6">
+                                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gray-300 rounded-full flex-shrink-0" />
+                                <div>
+                                  <p className="text-base sm:text-lg font-light">{r.user.firstname} {r.user.lastname}</p>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {new Date(r.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex gap-1 mb-4 sm:mb-6">
+                                {[1,2,3,4,5].map(s => (
+                                  <span key={s} className={`text-lg sm:text-xl ${s <= r.rating ? "text-white" : "text-gray-600"}`}>★</span>
+                                ))}
+                              </div>
+                              <p className="text-sm font-light text-gray-300 leading-relaxed">{r.comment || "No comment."}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Edit Product Modal */}
           <AnimatePresence>
             {editProduct && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-                role="dialog"
-                aria-modal="true"
-                aria-label="Edit product modal"
-              >
-                <motion.div
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.2 }}
-                  className="rounded-2xl bg-slate-900/70 backdrop-blur-lg shadow-xl shadow-black/30 border border-white/10 p-8 w-full max-w-md"
-                >
-                  <h2 className="text-2xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-500 mb-6">
-                    Edit Product
-                  </h2>
-                  <div className="grid grid-cols-1 gap-4">
-                    <input
-                      type="text"
-                      placeholder="Product Name *"
-                      value={editProduct.name}
-                      onChange={(e) => setEditProduct({ ...editProduct, name: e.target.value })}
-                      className="rounded-lg bg-slate-800/70 border border-white/10 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
-                      required
-                      aria-label="Product name"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Description"
-                      value={editProduct.description}
-                      onChange={(e) => setEditProduct({ ...editProduct, description: e.target.value })}
-                      className="rounded-lg bg-slate-800/70 border border-white/10 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
-                      aria-label="Product description"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Price *"
-                      value={editProduct.price}
-                      onChange={(e) =>
-                        setEditProduct({ ...editProduct, price: parseFloat(e.target.value) || 0 })
-                      }
-                      className="rounded-lg bg-slate-800/70 border border-white/10 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
-                      min="0"
-                      step="0.01"
-                      required
-                      aria-label="Product price"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Stock *"
-                      value={editProduct.stock}
-                      onChange={(e) =>
-                        setEditProduct({ ...editProduct, stock: parseInt(e.target.value) || 0 })
-                      }
-                      className="rounded-lg bg-slate-800/70 border border-white/10 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
-                      min="0"
-                      required
-                      aria-label="Product stock"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Image 1 URL *"
-                      value={editProduct.image1}
-                      onChange={(e) => setEditProduct({ ...editProduct, image1: e.target.value })}
-                      className="rounded-lg bg-slate-800/70 border border-white/10 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
-                      required
-                      aria-label="Primary product image URL"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Image 2 URL (Optional)"
-                      value={editProduct.image2}
-                      onChange={(e) => setEditProduct({ ...editProduct, image2: e.target.value })}
-                      className="rounded-lg bg-slate-800/70 border border-white/10 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
-                      aria-label="Secondary product image URL"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Image 3 URL (Optional)"
-                      value={editProduct.image3}
-                      onChange={(e) => setEditProduct({ ...editProduct, image3: e.target.value })}
-                      className="rounded-lg bg-slate-800/70 border border-white/10 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
-                      aria-label="Tertiary product image URL"
-                    />
-                    <select
-                      value={editProduct.category}
-                      onChange={(e) => setEditProduct({ ...editProduct, category: e.target.value })}
-                      className="rounded-lg bg-slate-800/70 border border-white/10 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
-                      required
-                      aria-label="Product category"
-                    >
-                      <option value="" disabled>Select Category *</option>
-                      <option value="tops">Tops</option>
-                      <option value="bottoms">Bottoms</option>
-                      <option value="dresses">Dresses</option>
-                      <option value="outerwear">Outerwear</option>
-                      <option value="shirts">Shirts</option>
-                      <option value="sweaters">Sweaters</option>
-                    </select>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 sm:p-8">
+                <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
+                  className="bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl p-8 sm:p-16 w-full max-w-4xl max-h-[95vh] overflow-y-auto">
+                  <h2 className="text-3xl sm:text-4xl font-extralight tracking-widest mb-12">Edit Product</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-10">
+                    {inputFields.map(({ key, label, type = "text" }) => (
+                      <div key={key}>
+                        <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2">{label}</label>
+                        <input
+                          type={type}
+                          value={editProduct[key as keyof Product] as string | number}
+                          onChange={e => setEditProduct(prev => prev ? ({
+                            ...prev,
+                            [key]: type === "number" ? (key === "price" ? parseFloat(e.target.value) || 0 : parseInt(e.target.value) || 0) : e.target.value
+                          }) : null)}
+                          className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-3xl placeholder-gray-500 focus:border-white/50 text-sm"
+                          required={label.includes("*")}
+                        />
+                      </div>
+                    ))}
+                    <div>
+                      <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2">Category *</label>
+                      <select value={editProduct.category} onChange={e => setEditProduct(prev => prev ? {...prev, category: e.target.value} : null)}
+                        className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-3xl text-black focus:border-white/50 text-sm" required>
+                        <option value="" disabled>Select Category</option>
+                        {["tops","bottoms","dresses","outerwear","shirts","sweaters"].map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+                      </select>
+                    </div>
                   </div>
-                  <div className="mt-6 flex gap-4">
-                    <button
-                      onClick={handleUpdate}
-                      disabled={isLoading}
-                      className="group flex-1 relative inline-flex items-center justify-center overflow-hidden rounded-xl bg-gradient-to-r from-cyan-500 via-sky-500 to-indigo-500 px-6 py-3 font-medium text-white shadow-lg shadow-cyan-500/20 transition-all duration-200 hover:from-cyan-400 hover:via-sky-400 hover:to-indigo-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
-                      aria-label="Save product changes"
-                    >
-                      <span className="absolute inset-0 -z-10 opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-30 bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-indigo-500" />
+                  <div className="mt-12 flex flex-col sm:flex-row gap-6">
+                    <button onClick={handleUpdate} disabled={isLoading}
+                      className="flex-1 py-5 bg-white text-black font-medium uppercase tracking-widest rounded-3xl hover:bg-gray-100 disabled:opacity-60 text-sm">
                       {isLoading ? "Saving..." : "Save Changes"}
                     </button>
-                    <button
-                      onClick={() => setEditProduct(null)}
-                      className="flex-1 rounded-lg bg-slate-800/70 border border-white/10 px-4 py-2 text-slate-100 font-medium hover:bg-slate-800/90 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all duration-200 hover:scale-105"
-                      aria-label="Cancel edit"
-                    >
-                      Cancel
-                    </button>
+                    <button onClick={() => setEditProduct(null)}
+                      className="flex-1 py-5 bg-white/10 border border-white/20 rounded-3xl hover:bg-white/20 text-sm">Cancel</button>
                   </div>
                 </motion.div>
               </motion.div>
@@ -717,65 +513,34 @@ const AdminDashboard = () => {
           {/* Edit User Role Modal */}
           <AnimatePresence>
             {editUser && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-                role="dialog"
-                aria-modal="true"
-                aria-label="Edit user role modal"
-              >
-                <motion.div
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.2 }}
-                  className="rounded-2xl bg-slate-900/70 backdrop-blur-lg shadow-xl shadow-black/30 border border-white/10 p-8 w-full max-w-md"
-                >
-                  <h2 className="text-2xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-500 mb-6">
-                    Edit User Role
-                  </h2>
-                  <div className="grid grid-cols-1 gap-4">
-                    <div className="text-sm text-slate-400">
-                      <p>Username: {editUser.username}</p>
-                      <p>Email: {editUser.email}</p>
-                    </div>
-                    <select
-                      value={editUser.role}
-                      onChange={(e) => setEditUser({ ...editUser, role: e.target.value as "user" | "admin" })}
-                      className="rounded-lg bg-slate-800/70 border border-white/10 px-4 py-3 text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 focus:border-transparent transition-all duration-200"
-                      required
-                      aria-label="User role"
-                    >
-                      <option value="user">User</option>
-                      <option value="admin">Admin</option>
-                    </select>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 sm:p-8">
+                <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
+                  className="bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl p-8 sm:p-12 w-full max-w-lg">
+                  <h2 className="text-2xl sm:text-3xl font-extralight tracking-widest mb-10">Edit User Role</h2>
+                  <div className="space-y-6 mb-10 text-sm">
+                    <p className="text-gray-400">Name: <span className="text-white">{editUser.firstname} {editUser.lastname}</span></p>
+                    <p className="text-gray-400">Email: <span className="text-white">{editUser.email}</span></p>
+                    <p className="text-gray-400">Phone: <span className="text-white">{editUser.phone || "—"}</span></p>
                   </div>
-                  <div className="mt-6 flex gap-4">
-                    <button
-                      onClick={handleUpdateUserRole}
-                      disabled={isLoading}
-                      className="group flex-1 relative inline-flex items-center justify-center overflow-hidden rounded-xl bg-gradient-to-r from-cyan-500 via-sky-500 to-indigo-500 px-6 py-3 font-medium text-white shadow-lg shadow-cyan-500/20 transition-all duration-200 hover:from-cyan-400 hover:via-sky-400 hover:to-indigo-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
-                      aria-label="Save user role changes"
-                    >
-                      <span className="absolute inset-0 -z-10 opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-30 bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-indigo-500" />
+                  <select value={editUser.role} onChange={e => setEditUser(prev => prev ? {...prev, role: e.target.value as "user"|"admin"} : null)}
+                    className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-3xl text-white focus:border-white/50 mb-10 text-sm">
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                  <div className="flex flex-col sm:flex-row gap-6">
+                    <button onClick={handleUpdateUserRole} disabled={isLoading}
+                      className="flex-1 py-5 bg-white text-black font-medium uppercase tracking-widest rounded-3xl hover:bg-gray-100 disabled:opacity-60 text-sm">
                       {isLoading ? "Saving..." : "Save Changes"}
                     </button>
-                    <button
-                      onClick={() => setEditUser(null)}
-                      className="flex-1 rounded-lg bg-slate-800/70 border border-white/10 px-4 py-2 text-slate-100 font-medium hover:bg-slate-800/90 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 transition-all duration-200 hover:scale-105"
-                      aria-label="Cancel edit"
-                    >
-                      Cancel
-                    </button>
+                    <button onClick={() => setEditUser(null)}
+                      className="flex-1 py-5 bg-white/10 border border-white/20 rounded-3xl hover:bg-white/20 text-sm">Cancel</button>
                   </div>
                 </motion.div>
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+        </main>
       </div>
     </>
   );

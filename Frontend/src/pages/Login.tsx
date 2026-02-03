@@ -58,152 +58,162 @@ const Login = () => {
   );
 
   return (
-    <div className="relative min-h-screen bg-slate-950 text-slate-100">
-      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute -top-20 -left-24 h-80 w-80 rounded-full bg-cyan-500/20 blur-3xl" />
-        <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-indigo-500/20 blur-3xl" />
-      </div>
+    <div className="relative min-h-screen bg-black text-white overflow-hidden">
+      {/* High-contrast black & white fashion background */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-25"
+        style={{
+          backgroundImage: "url('https://www.shutterstock.com/image-photo/monochrome-fashion-portrait-beautiful-sensual-600nw-2619914245.jpg')",
+        }}
+      />
 
-      <div className="mx-auto grid min-h-screen w-full max-w-6xl grid-cols-1 gap-8 px-6 py-12 md:grid-cols-2 md:items-center">
-        <div className="order-2 md:order-1">
-          <div className="mb-8 inline-flex items-center gap-2">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 to-indigo-500 shadow-lg shadow-cyan-500/20">
-              <svg viewBox="0 0 24 24" className="h-6 w-6 fill-slate-900" aria-hidden="true">
-                <path d="M7 4h10l1 3h3v2h-1l-2 9H6L4 9H3V7h3l1-3zm2.2 5 1.5 7h7.1l1.6-7H9.2zM9 20a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm8 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/>
-              </svg>
-            </span>
-            <span className="text-lg font-semibold tracking-tight">YourStore</span>
+      {/* Subtle geometric pattern overlay for texture */}
+      <div 
+        className="absolute inset-0 opacity-10 mix-blend-overlay pointer-events-none"
+        style={{
+          backgroundImage: "url('https://static.vecteezy.com/system/resources/previews/012/697/877/non_2x/black-and-white-seamless-geometric-pattern-monochrome-repeating-pattern-abstract-background-with-squares-rotated-by-45-degrees-vector.jpg')",
+          backgroundSize: "cover",
+        }}
+      />
+
+      {/* Dark gradient overlay for better readability */}
+      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-black/80" />
+
+      <div className="relative z-10 flex min-h-screen items-center justify-center px-6 py-12">
+        <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20">
+          {/* Left Column - Brand Info (sharpened: larger text, better spacing) */}
+          <div className="flex flex-col justify-center text-left md:text-left">
+            <div className="mb-12 inline-flex items-center gap-4">
+              <div className="h-14 w-14 rounded-2xl bg-white flex items-center justify-center shadow-xl">
+                <svg viewBox="0 0 24 24" className="h-8 w-8 fill-black" aria-hidden="true">
+                  <path d="M7 4h10l1 3h3v2h-1l-2 9H6L4 9H3V7h3l1-3zm2.2 5 1.5 7h7.1l1.6-7H9.2zM9 20a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm8 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/>
+                </svg>
+              </div>
+              <span className="text-3xl font-light tracking-widest">YOURSTORE</span>
+            </div>
+
+            <h1 className="text-5xl md:text-6xl font-extralight tracking-wide mb-6">
+              Sign in to<br />your account
+            </h1>
+            <p className="text-xl text-gray-300 mb-12 max-w-lg">
+              Access your orders, saved items, and personalized recommendations.<br />
+              Secure, fast, and effortless.
+            </p>
+
+            <ul className="space-y-5 text-gray-400 text-lg">
+              {[
+                "Encrypted authentication & secure sessions",
+                "Track orders and manage returns easily",
+                "Exclusive deals tailored to you",
+              ].map((text) => (
+                <li key={text} className="flex items-center gap-4">
+                  <span className="h-2.5 w-2.5 rounded-full bg-white/70" />
+                  {text}
+                </li>
+              ))}
+            </ul>
           </div>
 
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            Sign in to your account
-          </h1>
-          <p className="mt-3 max-w-md text-slate-300">
-            Access your orders, saved items, and personalized recommendations.
-            Secure, fast, and simple.
-          </p>
-
-          <ul className="mt-8 space-y-3 text-sm text-slate-300">
-            {[
-              "Encrypted authentication & secure sessions",
-              "Track orders and manage returns easily",
-              "Exclusive deals tailored to you",
-            ].map((text) => (
-              <li key={text} className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
-                {text}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="order-1 md:order-2">
-          <form
-            onSubmit={handleLogin}
-            className="mx-auto w-full max-w-md rounded-2xl border border-white/10 bg-slate-900/70 p-6 backdrop-blur supports-[backdrop-filter]:bg-slate-900/60 shadow-xl shadow-black/40"
-            noValidate
-          >
-            <div className="mb-6 h-1 w-full rounded bg-gradient-to-r from-cyan-400 via-sky-400 to-indigo-500" />
-
-            {error && (
-              <div
-                role="alert"
-                className="mb-4 rounded-lg border border-rose-400/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-200"
-              >
-                {error}
-              </div>
-            )}
-
-            <div className="mb-4">
-              <div className="relative">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder=" "
-                  className="peer block w-full rounded-xl border border-white/10 bg-slate-800/70 px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/30"
-                  autoComplete="email"
-                  required
-                  aria-invalid={!!error}
-                  aria-describedby={error ? "email-error" : undefined}
-                />
-                <label
-                  htmlFor="email"
-                  className="pointer-events-none absolute left-4 top-3 origin-left -translate-y-1/2 bg-slate-900/70 px-1 text-slate-400 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:text-xs peer-focus:text-cyan-300"
-                >
-                  Email address
-                </label>
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <div className="relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  placeholder=" "
-                  className="peer block w-full rounded-xl border border-white/10 bg-slate-800/70 px-4 py-3 pr-12 text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/30"
-                  autoComplete="current-password"
-                  required
-                  aria-invalid={!!error}
-                  aria-describedby={error ? "password-error" : undefined}
-                />
-                <label
-                  htmlFor="password"
-                  className="pointer-events-none absolute left-4 top-3 origin-left -translate-y-1/2 bg-slate-900/70 px-1 text-slate-400 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:text-xs peer-focus:text-cyan-300"
-                >
-                  Password
-                </label>
-                <button
-                  type="button"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute inset-y-0 right-0 my-auto mr-2 inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-slate-800/60 hover:bg-slate-800/90"
-                >
-                  {showPassword ? (
-                    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-slate-300" aria-hidden="true">
-                      <path d="M2.8 2.1 1.4 3.5l3.2 3.1A12.5 12.5 0 0 0 .5 12s3.5 7 11.5 7c2.2 0 4.1-.5 5.7-1.3l3 3 1.4-1.4L2.8 2.1zM12 17c-2.8 0-5-2.2-5-5 0-.7.2-1.4.5-2l1.5 1.5A3 3 0 0 0 9 12a3 3 0 0 0 3 3c.5 0 1-.1 1.5-.3l1.5 1.5c-.6.3-1.3.5-2 .5zm9.5-5c-.5.9-1.3 2-2.5 3.1l-1.6-1.6A7.7 7.7 0 0 0 19.9 12C18 9.1 15.3 7.5 12 7.5c-.7 0-1.4.1-2 .3L8.3 6.2c1.1-.4 2.3-.7 3.7-.7 8 0 11.5 7 11.5 7z"/>
-                    </svg>
-                  ) : (
-                    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-slate-300" aria-hidden="true">
-                      <path d="M12 5c8 0 11.5 7 11.5 7S20 19 12 19 0.5 12 0.5 12 4 5 12 5zm0 2.5C8.7 7.5 6 9.1 4.1 12 6 14.9 8.7 16.5 12 16.5S18 14.9 19.9 12C18 9.1 15.3 7.5 12 7.5zm0 2a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5z"/>
-                    </svg>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gradient-to-r from-cyan-500 via-sky-500 to-indigo-500 px-4 py-3 font-medium text-white shadow-lg transition hover:from-cyan-400 hover:via-sky-400 hover:to-indigo-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
+          {/* Right Column - Login Form (sharpened: cleaner, more premium) */}
+          <div className="flex items-center justify-center">
+            <form
+              onSubmit={handleLogin}
+              className="w-full max-w-md rounded-3xl bg-white/5 backdrop-blur-2xl border border-white/20 p-10 shadow-2xl"
+              noValidate
             >
-              <span className="absolute inset-0 -z-10 opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-30 bg-gradient-to-r from-cyan-500 via-fuchsia-500 to-indigo-500" />
-              {isLoading ? "Signing in..." : "Sign in"}
-            </button>
+              <div className="mb-8 h-px bg-white/20" />
 
-            <div className="my-6 h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+              {error && (
+                <div className="mb-6 rounded-xl bg-red-500/10 border border-red-500/30 px-5 py-4 text-sm text-red-300">
+                  {error}
+                </div>
+              )}
 
-            <nav className="text-center text-sm text-slate-300 space-y-3">
-              <p>
-                Don’t have an account?{" "}
-                <a href={ROUTES.REGISTER} className="text-cyan-300 hover:text-cyan-200 underline-offset-4 hover:underline">
-                  Create one
-                </a>
-              </p>
-              <p>
-                Go to{" "}
-                <a href={ROUTES.HOME} className="text-cyan-300 hover:text-cyan-200 underline-offset-4 hover:underline">
-                  Home
-                </a>
-              </p>
-            </nav>
-          </form>
+              <div className="mb-6">
+                <div className="relative">
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder=" "
+                    className="peer block w-full rounded-xl border border-white/30 bg-transparent px-6 py-4 text-white placeholder-transparent outline-none focus:border-white/70 focus:ring-4 focus:ring-white/20 transition"
+                    autoComplete="email"
+                    required
+                  />
+                  <label
+                    htmlFor="email"
+                    className="absolute left-6 top-4 -translate-y-1/2 text-gray-400 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-base peer-focus:top-0 peer-focus:text-xs peer-focus:text-white/80 bg-transparent px-1"
+                  >
+                    Email address
+                  </label>
+                </div>
+              </div>
+
+              <div className="mb-8">
+                <div className="relative">
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    placeholder=" "
+                    className="peer block w-full rounded-xl border border-white/30 bg-transparent px-6 py-4 pr-14 text-white placeholder-transparent outline-none focus:border-white/70 focus:ring-4 focus:ring-white/20 transition"
+                    autoComplete="current-password"
+                    required
+                  />
+                  <label
+                    htmlFor="password"
+                    className="absolute left-6 top-4 -translate-y-1/2 text-gray-400 transition-all peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-base peer-focus:top-0 peer-focus:text-xs peer-focus:text-white/80 bg-transparent px-1"
+                  >
+                    Password
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-5 text-gray-400 hover:text-white"
+                  >
+                    {showPassword ? (
+                      <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.418 0-8-3.582-8-8 0-.826.125-1.63.357-2.4m1.286-1.2A10.05 10.05 0 0112 5c4.418 0 8 3.582 8 8 0 .826-.125 1.63-.357 2.4m-1.286 1.2M3 3l18 18" />
+                      </svg>
+                    ) : (
+                      <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-4 bg-white text-black font-semibold rounded-xl shadow-lg hover:bg-gray-100 transition disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isLoading ? "Signing in..." : "Sign in"}
+              </button>
+
+              <div className="my-8 h-px bg-white/20" />
+
+              <div className="text-center text-sm text-gray-400 space-y-3">
+                <p>
+                  Don’t have an account?{" "}
+                  <a href={ROUTES.REGISTER} className="text-white font-medium hover:underline">
+                    Create one
+                  </a>
+                </p>
+                <p>
+                  <a href={ROUTES.HOME} className="text-white font-medium hover:underline">
+                    Go to Home
+                  </a>
+                </p>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>

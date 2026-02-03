@@ -1,5 +1,4 @@
-# Backend/app/__init__.py
-import os
+# app/utils/__init__.py
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -24,7 +23,7 @@ def create_app():
     # Initialize CORS
     CORS(app, resources={
         r"/*": {
-            "origins": ["http://localhost:3000", "https://heroclothline.netlify.app"],
+            "origins": ["http://localhost:3000"],
             "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization"],
             "supports_credentials": True
@@ -36,9 +35,9 @@ def create_app():
     def handle_options():
         if request.method == "OPTIONS":
             response = jsonify({"msg": "CORS preflight successful"})
-            response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000,https://heroclothline.netlify.app")
-            response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
-            response.headers.add("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
+            response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
+            response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
+            response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
             response.headers.add("Access-Control-Allow-Credentials", "true")
             return response, 200
 
@@ -54,10 +53,19 @@ def create_app():
         from app.routes.cart import cart_bp
         from app.routes.product import product_bp
         from app.routes.user import user_bp
+        from app.routes.review import review_bp
+        from app.routes.order import order_bp
+        from app.routes.mpesa import mpesa_bp
+
         app.register_blueprint(auth_bp, url_prefix='/auth')
         app.register_blueprint(cart_bp, url_prefix='/cart')
         app.register_blueprint(product_bp, url_prefix='/product')
         app.register_blueprint(user_bp, url_prefix='/user')
+        app.register_blueprint(review_bp, url_prefix='/review')
+        app.register_blueprint(order_bp, url_prefix='/order')
+        app.register_blueprint(mpesa_bp, url_prefix='/mpesa')
+        
+
         db.create_all()
         print("Registered blueprints:", [rule.endpoint for rule in app.url_map.iter_rules()])
 
