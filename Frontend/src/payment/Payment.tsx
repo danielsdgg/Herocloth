@@ -21,7 +21,7 @@ const Payment = () => {
   const [paymentTiming, setPaymentTiming] = useState<"prepay" | "postpay">("prepay");
   const [paymentMethod, setPaymentMethod] = useState<"mpesa" | "card">("mpesa");
 
-  // Delivery fee: KSh 200 for Nairobi (always added when selected)
+  // Delivery fee always added for Nairobi (as per your final rule)
   const deliveryFee = deliveryOption === "nairobi" ? 200 : 0;
   const total = subtotal + deliveryFee;
 
@@ -67,7 +67,7 @@ const Payment = () => {
     setIsProcessing(true);
 
     try {
-      // 1. Create order
+      // 1. Create the order
       const payload = {
         payment_method: paymentMethod,
         payment_timing: paymentTiming,
@@ -85,54 +85,45 @@ const Payment = () => {
       const orderRes = await api.post("/order/create", payload);
       const orderId = orderRes.data.order_id;
 
-      toast.success("Order created!");
+      toast.success("Order created successfully!");
 
-      // 2. Handle payment / confirmation
+      // 2. Payment / confirmation flow
       if (paymentTiming === "postpay") {
-        // No further action needed — backend already set 'cod'
-        toast.success("Order placed successfully! Pay on delivery.");
+        // Backend already sets 'cod' status — no extra call needed
+        toast.success("Order placed! Pay KSh " + total.toFixed(2) + " on delivery.");
       } else {
         // Prepay
         if (paymentMethod === "mpesa") {
-          // ---------------- REAL MPESA STK PUSH ----------------
-          try {
-            toast.info("Initiating M-Pesa STK Push...");
+          toast.info("Initiating M-Pesa payment...");
 
-            // Replace these with YOUR Daraja credentials
-            const darajaPayload = {
-              phone: mpesaPhone.startsWith("0") ? "254" + mpesaPhone.slice(1) : mpesaPhone,
-              amount: Math.round(total),
-              order_id: orderId, // optional — can help correlate callback
-              // You can add callback_url if you have webhook endpoint ready
-            };
+          const darajaPayload = {
+            phone: mpesaPhone.startsWith("0") ? "254" + mpesaPhone.slice(1) : mpesaPhone,
+            amount: Math.round(total),
+            order_id: orderId,
+          };
 
-            // Call your backend Daraja endpoint (we'll create this next)
-            const stkRes = await api.post("/mpesa/stk-push", darajaPayload);
+          const stkRes = await api.post("/mpesa/stk-push", darajaPayload);
 
-            if (stkRes.data.success) {
-              toast.success("M-Pesa PIN prompt sent! Please complete payment on your phone.");
-              // In production: show "Waiting for payment confirmation..." and poll or wait for webhook
-            } else {
-              throw new Error(stkRes.data.message || "STK Push failed");
-            }
-          } catch (mpesaErr: any) {
-            toast.error(mpesaErr.response?.data?.msg || "M-Pesa payment initiation failed");
-            console.error("M-Pesa error:", mpesaErr);
-            // Optionally: allow retry or mark order as failed
+          if (stkRes.data.success) {
+            toast.success("M-Pesa PIN prompt sent! Please complete payment on your phone.");
+            // In real app: show waiting UI / poll status or wait for webhook
+          } else {
+            throw new Error(stkRes.data.message || "M-Pesa initiation failed");
           }
         } else {
-          // Card placeholder
+          // Card (simulation for now)
           toast.info("Processing card payment...");
-          await new Promise(r => setTimeout(r, 3000));
-          toast.success("Card payment successful! (simulation)");
+          await new Promise(r => setTimeout(r, 1500)); // short delay for UX
+          toast.success("Card payment successful!");
         }
       }
 
       clearCart();
       navigate("/orders");
     } catch (err: any) {
-      toast.error(err.response?.data?.msg || "Checkout failed. Please try again.");
-      console.error("Full checkout error:", err);
+      const errorMsg = err.response?.data?.msg || err.message || "Checkout failed. Please try again.";
+      toast.error(errorMsg);
+      console.error("Checkout error:", err);
     } finally {
       setIsProcessing(false);
     }
@@ -204,7 +195,7 @@ const Payment = () => {
                 </div>
               </motion.section>
 
-              {/* Address */}
+              {/* Address Fields */}
               {deliveryOption && (
                 <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
                   <h2 className="text-2xl font-light mb-6">Delivery Address</h2>

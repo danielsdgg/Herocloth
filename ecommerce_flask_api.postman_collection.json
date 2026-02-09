@@ -1,8 +1,8 @@
 {
   "info": {
-    "_postman_id": "e-commerce-flask-updated",
-    "name": "E-commerce Flask API (Updated)",
-    "description": "Postman collection for testing Flask e-commerce backend APIs - with M-Pesa Daraja STK Push support",
+    "_postman_id": "e-commerce-flask-updated-2026",
+    "name": "E-commerce Flask API",
+    "description": "Postman collection for testing Flask e-commerce backend APIs - with real M-Pesa Daraja STK Push support",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -31,13 +31,13 @@
     },
     {
       "key": "darajaConsumerKey",
-      "value": "your_consumer_key_here",
+      "value": "yJFJXyZDVWa3YJCi4dco2Cv1gD2CxdnxAoD8vWD2gLDCVyYd",
       "type": "string",
-      "description": "Daraja API Consumer Key (sandbox or production)"
+      "description": "Daraja API Consumer Key (sandbox)"
     },
     {
       "key": "darajaConsumerSecret",
-      "value": "your_consumer_secret_here",
+      "value": "GcGyCfuRrzvLaMVo2ynxvKF8LIW0Ylf4sBOxnfFlU2QsEwGKuVivXtLtVTaydG56",
       "type": "string",
       "description": "Daraja API Consumer Secret"
     },
@@ -45,7 +45,7 @@
       "key": "mpesaPhone",
       "value": "254708374149",
       "type": "string",
-      "description": "Test phone for STK Push (sandbox: 254708374149)"
+      "description": "Test phone for STK Push (sandbox: 254708374149, PIN 254708)"
     }
   ],
   "item": [
@@ -64,7 +64,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\"firstname\": \"John\", \"lastname\": \"Doe\", \"email\": \"john.doe@example.com\", \"phone\": 1234567890, \"password\": \"password123\", \"role\": \"user\"}"
+              "raw": "{\"firstname\": \"Daniel\", \"lastname\": \"Muiruri\", \"email\": \"gathigidg26@gmail.com\", \"phone\": 0707319080, \"password\": \"password123\", \"role\": \"user\"}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/register",
@@ -123,7 +123,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\"email\": \"john.doe@example.com\", \"password\": \"password123\"}"
+              "raw": "{\"email\": \"gathigidg26@gmail.com\", \"password\": \"password123\"}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
@@ -187,7 +187,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\"firstname\": \"Jane\", \"lastname\": \"Smith\", \"email\": \"jane.smith@example.com\", \"phone\": 1112223333, \"password\": \"newpassword456\"}"
+              "raw": "{\"firstname\": \"Jane\", \"lastname\": \"Smith\", \"email\": \"janesmith@gmail.com\", \"phone\": 1112223333, \"password\": \"newpassword456\"}"
             },
             "url": {
               "raw": "{{baseUrl}}/user/profile",
@@ -296,6 +296,60 @@
               "path": ["product"]
             }
           }
+        },
+        {
+          "name": "Get Product by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/product/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["product", "{{productId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Product (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"Updated Elegant Blazer\", \"description\": \"Updated description\", \"price\": 249.99, \"stock\": 40}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/product/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["product", "{{productId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Product (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/product/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["product", "{{productId}}"]
+            }
+          }
         }
       ]
     },
@@ -392,6 +446,94 @@
           }
         },
         {
+          "name": "Get My Reviews",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/review/my-reviews",
+              "host": ["{{baseUrl}}"],
+              "path": ["review", "my-reviews"]
+            }
+          }
+        },
+        {
+          "name": "Update Review (Own)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 4,\n  \"comment\": \"Updated: still good but delivery slow\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/review/{{reviewId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["review", "{{reviewId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Review (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/review/{{reviewId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["review", "{{reviewId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get All Reviews (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/review/all",
+              "host": ["{{baseUrl}}"],
+              "path": ["review", "all"]
+            }
+          }
+        },
+        {
+          "name": "Get Product Reviews",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/review/product/{{productId}}/reviews",
+              "host": ["{{baseUrl}}"],
+              "path": ["review", "product", "{{productId}}", "reviews"]
+            }
+          }
+        },
+        {
           "name": "Get Rating Summary",
           "request": {
             "method": "GET",
@@ -431,7 +573,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["order", "create"]
             },
-            "description": "Creates prepay order with M-Pesa and Nairobi delivery (fee 200 added)"
+            "description": "Creates prepay order with M-Pesa and Nairobi delivery (fee 200 added). Use this before testing STK Push."
           }
         },
         {
@@ -483,7 +625,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["order", "create"]
             },
-            "description": "No delivery fee added"
+            "description": "Postpay order - no delivery fee added"
           }
         },
         {
@@ -549,10 +691,12 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"STK Push initiated successfully\", function () {",
+                  "pm.test(\"STK Push response is valid\", function () {",
                   "    pm.response.to.have.status(200);",
-                  "    pm.expect(pm.response.json()).to.have.property('success', true);",
-                  "    pm.expect(pm.response.json()).to.have.property('checkout_request_id');",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('success', true);",
+                  "    pm.expect(jsonData).to.have.property('checkout_request_id');",
+                  "    pm.expect(jsonData.message).to.include('check your phone');",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -580,11 +724,57 @@
               "host": ["{{baseUrl}}"],
               "path": ["mpesa", "stk-push"]
             },
-            "description": "Triggers real M-Pesa STK Push (sandbox: phone 254708374149, PIN 254708)"
+            "description": "Triggers real M-Pesa STK Push (sandbox phone: 254708374149, PIN: 254708). Create an order first and update orderId variable."
+          }
+        },
+        {
+          "name": "Get Access Token (Manual Test)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Basic {{darajaConsumerKey}}:{{darajaConsumerSecret}}"
+              }
+            ],
+            "url": {
+              "raw": "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
+              "host": ["sandbox.safaricom.co.ke"],
+              "path": ["oauth", "v1", "generate"],
+              "query": [
+                {
+                  "key": "grant_type",
+                  "value": "client_credentials"
+                }
+              ]
+            },
+            "description": "Directly test Daraja OAuth (base64 of consumer key:secret in Authorization header). Useful for debugging."
+          }
+        },
+        {
+          "name": "Simulate STK Push Callback (Webhook Test)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"Body\": {\n    \"stkCallback\": {\n      \"MerchantRequestID\": \"12345-abc\",\n      \"CheckoutRequestID\": \"ws_CO_DMZ_123456789\",\n      \"ResultCode\": 0,\n      \"ResultDesc\": \"The service request is processed successfully.\",\n      \"CallbackMetadata\": {\n        \"Item\": [\n          { \"Name\": \"Amount\", \"Value\": 10 },\n          { \"Name\": \"MpesaReceiptNumber\", \"Value\": \"RKF12345678\" },\n          { \"Name\": \"TransactionDate\", \"Value\": 20260209143000 },\n          { \"Name\": \"PhoneNumber\", \"Value\": 254708374149 }\n        ]\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/mpesa/callback",
+              "host": ["{{baseUrl}}"],
+              "path": ["mpesa", "callback"]
+            },
+            "description": "Simulate successful STK Push callback from Safaricom (ResultCode 0). Test your webhook endpoint."
           }
         }
       ],
-      "description": "Real M-Pesa Daraja STK Push integration"
+      "description": "Real M-Pesa Daraja STK Push integration and testing"
     }
   ]
 }

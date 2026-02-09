@@ -13,6 +13,7 @@ import { CartProvider } from "./Context/CartContext";
 import Contact from "./pages/Contact";
 import Payment from "./payment/Payment";
 import Orders from "./order/OrdersHistory";
+import ClientDashboard from "./pages/ClientDashboard";
 
 const AppContent = () => {
   const location = useLocation();
@@ -52,6 +53,7 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
+        <Route path="/dashboard" element={<ClientDashboard />} />
         <Route path="/product/:id" element={<ProductDetails />} />
         <Route path="/contact" element={<Contact/>} />
         <Route path="/checkout" element={<Payment/>} />

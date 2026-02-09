@@ -12,7 +12,8 @@ const ROUTES = {
   LOGIN: "/login",
   REGISTER: "/register",
   PROFILE: "/profile",
-  DASHBOARD: "/admin",
+  DASHBOARD: "/admin",           // Admin dashboard
+  CLIENT_DASHBOARD: "/dashboard", // Client's dashboard (new)
 };
 
 const Navbar = () => {
@@ -52,8 +53,13 @@ const Navbar = () => {
       token
         ? [
             { to: ROUTES.PROFILE, label: "Profile", icon: <FaUser className="w-3.5 h-3.5" /> },
+            // Admin sees admin dashboard
             ...(role === "admin"
               ? [{ to: ROUTES.DASHBOARD, label: "Dashboard", icon: null }]
+              : []),
+            // Regular logged-in users (clients) see client dashboard
+            ...(role !== "admin"
+              ? [{ to: ROUTES.CLIENT_DASHBOARD, label: "Dashboard", icon: null }]
               : []),
             { label: "Logout", action: handleLogout, icon: null },
           ]
@@ -129,7 +135,7 @@ const Navbar = () => {
                       ) : (
                         <Link
                           key={item.label}
-                          to={item.to!}
+                          to={item.to}
                           onClick={() => setIsAccountOpen(false)}
                           className="block px-6 py-3 text-sm font-light tracking-wide hover:bg-white/10 transition"
                         >
@@ -212,7 +218,7 @@ const Navbar = () => {
                         ) : (
                           <Link
                             key={item.label}
-                            to={item.to!}
+                            to={item.to}
                             onClick={() => {
                               setIsOpen(false);
                               setIsAccountOpen(false);
