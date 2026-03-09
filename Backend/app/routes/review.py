@@ -7,6 +7,7 @@ from app.models.product import Product
 from flask_cors import cross_origin
 from datetime import datetime
 from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 
 review_bp = Blueprint('review', __name__)
 
@@ -35,7 +36,7 @@ def create_review():
     if not product:
         return jsonify({"msg": "Product not found"}), 404
 
-    # Prevent duplicate reviews from same user on same product
+    # Prevent duplicate reviews
     existing_review = Review.query.filter_by(user_id=current_user_id, product_id=product_id).first()
     if existing_review:
         return jsonify({"msg": "You have already reviewed this product"}), 400
@@ -45,8 +46,7 @@ def create_review():
         comment=comment or None,
         user_id=current_user_id,
         product_id=product_id,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow()
+        created_at=datetime.utcnow()
     )
 
     try:
@@ -56,7 +56,7 @@ def create_review():
         return jsonify({"msg": "Review submitted successfully"}), 201
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error creating review: {str(e)}")
+        current_app.logger.exception(f"Error creating review: {str(e)}")
         return jsonify({"msg": "Failed to submit review"}), 500
 
 
@@ -68,37 +68,29 @@ def get_my_reviews():
     current_user_id = get_jwt_identity()
 
     try:
-        # Eager load product to avoid lazy load issues
         reviews = (
             Review.query
             .filter_by(user_id=current_user_id)
-            .options(db.joinedload(Review.product))  # Safe eager loading
+            .options(joinedload(Review.product))
             .order_by(Review.created_at.desc())
             .all()
         )
 
         serialized = []
         for r in reviews:
-            product_name = r.product.name if r.product else "Deleted Product"
             serialized.append({
                 "id": r.id,
                 "product_id": r.product_id,
-                "product_name": product_name,
+                "product_name": r.product.name if r.product else "Deleted Product",
                 "rating": r.rating,
                 "comment": r.comment or "",
                 "created_at": r.created_at.isoformat()
-                # Removed updated_at since it doesn't exist in your model
             })
 
         return jsonify(serialized), 200
-
     except Exception as e:
-        # Log full traceback for debugging
         current_app.logger.exception(f"Error fetching my-reviews for user {current_user_id}")
-        return jsonify({
-            "msg": "Failed to fetch your reviews",
-            "error": str(e)
-        }), 500
+        return jsonify({"msg": "Failed to fetch your reviews"}), 500
 
 
 # PUT /review/<int:review_id> - Edit own review (only owner can edit)
@@ -127,15 +119,13 @@ def update_review(review_id):
     if 'comment' in data:
         review.comment = comment or None
 
-    review.updated_at = datetime.utcnow()
-
     try:
         db.session.commit()
         current_app.logger.info(f"Review {review_id} updated by user {current_user_id}")
         return jsonify({"msg": "Review updated successfully"}), 200
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error updating review {review_id}: {str(e)}")
+        current_app.logger.exception(f"Error updating review {review_id}")
         return jsonify({"msg": "Failed to update review"}), 500
 
 
@@ -161,7 +151,7 @@ def delete_review(review_id):
         return jsonify({"msg": "Review deleted successfully"}), 200
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error deleting review {review_id}: {str(e)}")
+        current_app.logger.exception(f"Error deleting review {review_id}")
         return jsonify({"msg": "Failed to delete review"}), 500
 
 
@@ -177,6 +167,7 @@ def get_product_reviews(product_id):
         reviews = (
             Review.query
             .filter_by(product_id=product_id)
+            .options(joinedload(Review.user))
             .order_by(Review.created_at.desc())
             .all()
         )
@@ -197,7 +188,7 @@ def get_product_reviews(product_id):
 
         return jsonify(serialized), 200
     except Exception as e:
-        current_app.logger.error(f"Error fetching reviews for product {product_id}: {str(e)}")
+        current_app.logger.exception(f"Error fetching reviews for product {product_id}")
         return jsonify({"msg": "Failed to fetch reviews"}), 500
 
 
@@ -219,15 +210,15 @@ def get_rating_summary(product_id):
             .one()
         )
 
-        average = round(result.average_rating, 1) if result.average_rating else 0.0
-        count = result.review_count
+        average = round(result.average_rating or 0, 1)
+        count = result.review_count or 0
 
         return jsonify({
             "average_rating": average,
             "review_count": count
         }), 200
     except Exception as e:
-        current_app.logger.error(f"Error calculating summary for product {product_id}: {str(e)}")
+        current_app.logger.exception(f"Error calculating summary for product {product_id}")
         return jsonify({"msg": "Failed to fetch rating summary"}), 500
 
 
@@ -243,7 +234,12 @@ def get_all_reviews():
         return jsonify({"msg": "Admin access required"}), 403
 
     try:
-        reviews = Review.query.order_by(Review.created_at.desc()).all()
+        reviews = (
+            Review.query
+            .options(joinedload(Review.user), joinedload(Review.product))
+            .order_by(Review.created_at.desc())
+            .all()
+        )
 
         serialized = []
         for r in reviews:
@@ -264,5 +260,5 @@ def get_all_reviews():
 
         return jsonify(serialized), 200
     except Exception as e:
-        current_app.logger.error(f"Error fetching all reviews: {str(e)}")
+        current_app.logger.exception(f"Error fetching all reviews")
         return jsonify({"msg": "Failed to fetch reviews"}), 500

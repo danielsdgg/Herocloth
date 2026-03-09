@@ -21,7 +21,7 @@
       "key": "productId",
       "value": "1",
       "type": "string",
-      "description": "Product ID for testing reviews/orders"
+      "description": "Product ID for testing reviews/orders/wishlist"
     },
     {
       "key": "orderId",
@@ -546,6 +546,115 @@
           }
         }
       ]
+    },
+    {
+      "name": "Wishlist",
+      "item": [
+        {
+          "name": "Add to Wishlist",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"product_id\": {{productId}} }"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wishlist/add",
+              "host": ["{{baseUrl}}"],
+              "path": ["wishlist", "add"]
+            },
+            "description": "Adds the specified product to the authenticated user's wishlist. Returns 409 if already present."
+          },
+          "response": []
+        },
+        {
+          "name": "Remove from Wishlist",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wishlist/remove/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["wishlist", "remove", "{{productId}}"]
+            },
+            "description": "Removes a specific product from the authenticated user's wishlist by product ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Clear Entire Wishlist",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wishlist/clear",
+              "host": ["{{baseUrl}}"],
+              "path": ["wishlist", "clear"]
+            },
+            "description": "Deletes ALL items from the authenticated user's wishlist in one operation. Safe even if already empty."
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Wishlist",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wishlist/my-wishlist",
+              "host": ["{{baseUrl}}"],
+              "path": ["wishlist", "my-wishlist"]
+            },
+            "description": "Returns the current user's wishlist items with product details (name, price, image1, category, added_at)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Wishlists (Admin Only)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wishlist/all",
+              "host": ["{{baseUrl}}"],
+              "path": ["wishlist", "all"]
+            },
+            "description": "Admin-only endpoint. Returns aggregated wishlist data for all users who have wishlist items (includes summary stats and full item list per user)."
+          },
+          "response": []
+        }
+      ],
+      "description": "Wishlist management endpoints (user + admin)"
     },
     {
       "name": "Orders",

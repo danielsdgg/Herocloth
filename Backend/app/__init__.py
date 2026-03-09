@@ -57,6 +57,7 @@ def create_app():
         from app.routes.review import review_bp
         from app.routes.order import order_bp
         from app.routes.mpesa import mpesa_bp
+        from app.routes.wishlist import wishlist_bp
 
         app.register_blueprint(auth_bp, url_prefix='/auth')
         app.register_blueprint(cart_bp, url_prefix='/cart')
@@ -65,6 +66,7 @@ def create_app():
         app.register_blueprint(review_bp, url_prefix='/review')
         app.register_blueprint(order_bp, url_prefix='/order')
         app.register_blueprint(mpesa_bp, url_prefix='/mpesa')
+        app.register_blueprint(wishlist_bp, url_prefix='/wishlist')
         
 
         db.create_all()

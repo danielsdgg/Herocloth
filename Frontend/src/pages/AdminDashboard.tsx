@@ -24,11 +24,24 @@ interface Review {
   product: { id: number; name: string; image1: string };
 }
 
+interface WishlistGroup {
+  user_id: number;
+  user_name: string;
+  items: {
+    product_id: number;
+    name: string;
+    price: number;
+    image1: string;
+    added_at: string;
+  }[];
+}
+
 const AdminDashboard = () => {
   const { token, firstname, lastname, userId, setAuth } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [wishlists, setWishlists] = useState<WishlistGroup[]>([]); // ← New: all wishlists
   const [userSearch, setUserSearch] = useState("");
   const [newProduct, setNewProduct] = useState({
     name: "", description: "", price: 0, stock: 0,
@@ -38,7 +51,7 @@ const AdminDashboard = () => {
   const [editUser, setEditUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState<"users" | "products" | "create" | "reviews">("users");
+  const [activeSection, setActiveSection] = useState<"users" | "products" | "create" | "reviews" | "wishlists">("users");
 
   // Close sidebar when section changes on mobile
   useEffect(() => {
@@ -110,6 +123,24 @@ const AdminDashboard = () => {
       }
     };
     fetch();
+  }, [token, activeSection]);
+
+  // Fetch all wishlists when section is active (new)
+  useEffect(() => {
+    if (!token || activeSection !== "wishlists") return;
+    const fetchWishlists = async () => {
+      setIsLoading(true);
+      try {
+        const api = createApiInstance(token);
+        const res = await api.get<WishlistGroup[]>("/wishlist/all", { withCredentials: true });
+        setWishlists(res.data);
+      } catch {
+        toast.error("Failed to load wishlists");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchWishlists();
   }, [token, activeSection]);
 
   const filteredUsers = useMemo(() => {
@@ -249,7 +280,7 @@ const AdminDashboard = () => {
           <div className="p-10">
             <h2 className="text-2xl mt-25 font-extralight tracking-widest mb-16 text-gray-300">Admin Panel</h2>
             <nav className="space-y-3">
-              {["users", "create", "products", "reviews"].map(sec => (
+              {["users", "create", "products", "reviews", "wishlists"].map(sec => (
                 <button
                   key={sec}
                   onClick={() => {
@@ -260,7 +291,7 @@ const AdminDashboard = () => {
                     activeSection === sec ? "bg-white/10 border border-white/20 shadow-lg" : "hover:bg-white/5"
                   }`}
                 >
-                  {sec === "users" ? "Manage Users" : sec === "create" ? "Create Product" : sec === "products" ? "Manage Products" : "View Reviews"}
+                  {sec === "users" ? "Manage Users" : sec === "create" ? "Create Product" : sec === "products" ? "Manage Products" : sec === "reviews" ? "View Reviews" : "All Wishlists"}
                 </button>
               ))}
             </nav>
@@ -330,9 +361,9 @@ const AdminDashboard = () => {
                           <td className="px-6 py-6 text-sm text-gray-400 whitespace-nowrap">{u.phone || "—"}</td>
                           <td className="px-6 py-6 text-sm capitalize">{u.role}</td>
                           <td className="px-6 py-6 flex flex-col sm:flex-row gap-3">
-                            <button onClick={() => setEditUser(u)} className="px-6 py-3 bg-white/10 border border-white/20 rounded-xl hover:bg-white/20 text-xs">Edit Role</button>
+                            <button onClick={() => setEditUser(u)} className="flex-1 py-3 bg-white/10 border border-white/20 rounded-2xl hover:bg-white/20 text-xs">Edit Role</button>
                             <button onClick={() => handleDeleteUser(u.id)} disabled={u.id === userId}
-                              className="px-6 py-3 bg-red-900/20 border border-red-900/50 rounded-xl hover:bg-red-900/30 text-xs disabled:opacity-50">Delete</button>
+                              className="flex-1 py-3 bg-red-900/20 border border-red-900/50 rounded-2xl hover:bg-red-900/30 text-xs disabled:opacity-50">Delete</button>
                           </td>
                         </tr>
                       ))}
@@ -462,6 +493,48 @@ const AdminDashboard = () => {
                 )}
               </motion.div>
             )}
+
+            {/* Wishlists - New Section */}
+            {activeSection === "wishlists" && (
+              <motion.div key="wishlists" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }}>
+                <div className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <h2 className="text-3xl sm:text-4xl font-extralight tracking-widest">All Wishlists</h2>
+                  <p className="text-gray-500 text-base sm:text-lg">Total users with items: {wishlists.length}</p>
+                </div>
+
+                {wishlists.length === 0 ? (
+                  <p className="text-center py-20 sm:py-32 text-gray-400 text-base sm:text-lg">No wishlists yet.</p>
+                ) : (
+                  <div className="space-y-10 sm:space-y-16">
+                    {wishlists.map((group) => (
+                      <div key={group.user_id} className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-6 sm:p-10 shadow-2xl">
+                        <h3 className="text-xl sm:text-2xl font-light mb-6">
+                          {group.user_name} <span className="text-gray-500 text-base">({group.items.length} items)</span>
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {group.items.map((item) => (
+                            <div key={item.product_id} className="bg-white/5 rounded-2xl overflow-hidden border border-white/10">
+                              <img
+                                src={item.image1 || "https://via.placeholder.com/400x500?text=No+Image"}
+                                alt={item.name}
+                                className="w-full h-48 sm:h-56 object-cover"
+                              />
+                              <div className="p-4">
+                                <h4 className="text-base font-light mb-2 line-clamp-2">{item.name}</h4>
+                                <p className="text-lg font-extralight mb-2">KSh {item.price.toFixed(2)}</p>
+                                <p className="text-xs text-gray-500">
+                                  Added: {new Date(item.added_at).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            )}
           </AnimatePresence>
 
           {/* Edit Product Modal */}
@@ -491,7 +564,7 @@ const AdminDashboard = () => {
                     <div>
                       <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2">Category *</label>
                       <select value={editProduct.category} onChange={e => setEditProduct(prev => prev ? {...prev, category: e.target.value} : null)}
-                        className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-3xl text-black focus:border-white/50 text-sm" required>
+                        className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-3xl text-white focus:border-white/50 text-sm" required>
                         <option value="" disabled>Select Category</option>
                         {["tops","bottoms","dresses","outerwear","shirts","sweaters"].map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
                       </select>

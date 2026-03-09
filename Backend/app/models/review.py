@@ -9,13 +9,21 @@ class Review(db.Model):
     comment = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
-    # Foreign keys
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    # Foreign keys with explicit names + CASCADE
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey('users.id', name='fk_reviews_user_id', ondelete='CASCADE'),
+        nullable=False
+    )
+    product_id = db.Column(
+        db.Integer,
+        db.ForeignKey('product.id', name='fk_reviews_product_id', ondelete='CASCADE'),
+        nullable=False
+    )
 
-    # Relationships
-    user = db.relationship('User', backref=db.backref('reviews', lazy='dynamic'))
-    product = db.relationship('Product', backref=db.backref('reviews', lazy='dynamic'))
+    # Relationships (backrefs defined here - safe and no conflict)
+    user = db.relationship('User', backref=db.backref('reviews', lazy='dynamic', cascade='all, delete-orphan'))
+    product = db.relationship('Product', backref=db.backref('reviews', lazy='dynamic', cascade='all, delete-orphan'))
 
     def __repr__(self):
         return f'<Review {self.rating}★ by User {self.user_id} for Product {self.product_id}>'

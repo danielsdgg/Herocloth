@@ -1,8 +1,8 @@
 from app import db
-from app.models.review import Review 
 
 class Product(db.Model):
     __tablename__ = 'product'
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=True)
@@ -17,6 +17,11 @@ class Product(db.Model):
         default='bottoms',
         server_default='bottoms'
     )
+
+    # Relationships (backrefs defined in child models - no conflict here)
+    # reviews → from Review model
+    # cart_items → from Cart model
+    # wished_by → if you add Wishlist model later
 
     def __repr__(self):
         return f'<Product {self.name}>'

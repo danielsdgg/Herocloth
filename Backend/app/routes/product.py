@@ -29,14 +29,15 @@ def get_products():
             'category': p.category
         } for p in products]), 200
     except Exception as e:
-        current_app.logger.error(f"Error fetching products: {str(e)}")
-        return jsonify({"msg": f"Internal server error: {str(e)}"}), 500
+        current_app.logger.exception("Error fetching products")
+        return jsonify({"msg": "Internal server error"}), 500
+
 
 @product_bp.route('/<int:id>', methods=['GET'])
 @cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
 def get_product(id):
     try:
-        product = Product.query.get(id)
+        product = db.session.get(Product, id)
         if not product:
             current_app.logger.warning(f"Product not found: id={id}")
             return jsonify({"msg": "Product not found"}), 404
@@ -52,8 +53,9 @@ def get_product(id):
             'category': product.category
         }), 200
     except Exception as e:
-        current_app.logger.error(f"Error fetching product {id}: {str(e)}")
-        return jsonify({"msg": f"Internal server error: {str(e)}"}), 500
+        current_app.logger.exception(f"Error fetching product {id}")
+        return jsonify({"msg": "Internal server error"}), 500
+
 
 @product_bp.route('/', methods=['POST'])
 @product_bp.route('', methods=['POST'])
@@ -61,24 +63,26 @@ def get_product(id):
 @cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
 def create_product():
     current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
-    if user.role != 'admin':
+    user = db.session.get(User, current_user_id)
+    if not user or user.role != 'admin':
         current_app.logger.warning(f"Admin access denied for user_id: {current_user_id}")
         return jsonify({"msg": "Admin access required"}), 403
+
     data = request.get_json()
-    if not data.get('name') or not data.get('price') or not data.get('stock') or not data.get('image1') or not data.get('category'):
+    required = ['name', 'price', 'stock', 'image1', 'category']
+    if not all(data.get(k) for k in required):
         current_app.logger.warning(f"Missing required fields in create_product: {data}")
-        return jsonify({"msg": "Missing required fields, including category"}), 400
-    if data.get('price') <= 0:
-        current_app.logger.warning(f"Invalid price in create_product: {data.get('price')}")
+        return jsonify({"msg": "Missing required fields (name, price, stock, image1, category)"}), 400
+
+    if data['price'] <= 0:
         return jsonify({"msg": "Price must be greater than 0"}), 400
-    if data.get('stock') < 0:
-        current_app.logger.warning(f"Invalid stock in create_product: {data.get('stock')}")
+    if data['stock'] < 0:
         return jsonify({"msg": "Stock cannot be negative"}), 400
+
     valid_categories = ['tops', 'bottoms', 'dresses', 'outerwear', 'shirts', 'sweaters']
-    if data.get('category') not in valid_categories:
-        current_app.logger.warning(f"Invalid category in create_product: {data.get('category')}")
+    if data['category'] not in valid_categories:
         return jsonify({"msg": f"Category must be one of: {', '.join(valid_categories)}"}), 400
+
     product = Product(
         name=data['name'],
         description=data.get('description', ''),
@@ -89,6 +93,7 @@ def create_product():
         image3=data.get('image3', ''),
         category=data['category']
     )
+
     try:
         db.session.add(product)
         db.session.commit()
@@ -106,35 +111,39 @@ def create_product():
         }), 201
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error creating product: {str(e)}")
-        return jsonify({"msg": f"Internal server error: {str(e)}"}), 500
+        current_app.logger.exception(f"Error creating product")
+        return jsonify({"msg": "Internal server error"}), 500
+
 
 @product_bp.route('/<int:id>', methods=['PUT'])
 @jwt_required()
 @cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
 def update_product(id):
     current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
-    if user.role != 'admin':
+    user = db.session.get(User, current_user_id)
+    if not user or user.role != 'admin':
         current_app.logger.warning(f"Admin access denied for user_id: {current_user_id}")
         return jsonify({"msg": "Admin access required"}), 403
-    product = Product.query.get(id)
+
+    product = db.session.get(Product, id)
     if not product:
         current_app.logger.warning(f"Product not found: id={id}")
         return jsonify({"msg": "Product not found"}), 404
+
     data = request.get_json()
-    if 'name' in data and not data['name']:
-        current_app.logger.warning(f"Invalid product name: {data.get('name')}")
-        return jsonify({"msg": "Product name is required"}), 400
+
+    if 'name' in data and not data['name'].strip():
+        return jsonify({"msg": "Product name cannot be empty"}), 400
     if 'price' in data and data['price'] <= 0:
-        current_app.logger.warning(f"Invalid price: {data.get('price')}")
         return jsonify({"msg": "Price must be greater than 0"}), 400
     if 'stock' in data and data['stock'] < 0:
-        current_app.logger.warning(f"Invalid stock: {data.get('stock')}")
         return jsonify({"msg": "Stock cannot be negative"}), 400
-    if 'category' in data and data['category'] not in ['tops', 'bottoms', 'dresses', 'outerwear', 'shirts', 'sweaters']:
-        current_app.logger.warning(f"Invalid category: {data.get('category')}")
-        return jsonify({"msg": "Category must be one of: tops, bottoms, dresses, outerwear, shirts, sweaters"}), 400
+    if 'category' in data:
+        valid_categories = ['tops', 'bottoms', 'dresses', 'outerwear', 'shirts', 'sweaters']
+        if data['category'] not in valid_categories:
+            return jsonify({"msg": f"Category must be one of: {', '.join(valid_categories)}"}), 400
+
+    # Update only provided fields
     product.name = data.get('name', product.name)
     product.description = data.get('description', product.description)
     product.price = data.get('price', product.price)
@@ -143,6 +152,7 @@ def update_product(id):
     product.image2 = data.get('image2', product.image2)
     product.image3 = data.get('image3', product.image3)
     product.category = data.get('category', product.category)
+
     try:
         db.session.commit()
         current_app.logger.info(f"Product updated: id={id}, name={product.name}")
@@ -159,28 +169,31 @@ def update_product(id):
         }), 200
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error updating product {id}: {str(e)}")
-        return jsonify({"msg": f"Internal server error: {str(e)}"}), 500
+        current_app.logger.exception(f"Error updating product {id}")
+        return jsonify({"msg": "Internal server error"}), 500
+
 
 @product_bp.route('/<int:id>', methods=['DELETE'])
 @jwt_required()
 @cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
 def delete_product(id):
     current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
-    if user.role != 'admin':
+    user = db.session.get(User, current_user_id)
+    if not user or user.role != 'admin':
         current_app.logger.warning(f"Admin access denied for user_id: {current_user_id}")
         return jsonify({"msg": "Admin access required"}), 403
-    product = Product.query.get(id)
+
+    product = db.session.get(Product, id)
     if not product:
         current_app.logger.warning(f"Product not found: id={id}")
         return jsonify({"msg": "Product not found"}), 404
+
     try:
         db.session.delete(product)
         db.session.commit()
         current_app.logger.info(f"Product deleted: id={id}")
-        return jsonify({"msg": "Product deleted"}), 200
+        return jsonify({"msg": "Product deleted successfully"}), 200
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error deleting product {id}: {str(e)}")
-        return jsonify({"msg": f"Internal server error: {str(e)}"}), 500
+        current_app.logger.exception(f"Error deleting product {id}")
+        return jsonify({"msg": "Internal server error"}), 500
