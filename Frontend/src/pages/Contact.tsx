@@ -8,6 +8,7 @@ import Footer from "../components/Footer";
 
 interface ContactFormData {
   name: string;
+  email: string;  // New: added email
   subject: string;
   message: string;
 }
@@ -16,6 +17,7 @@ const Contact = () => {
   const { token, username } = useAuth();
   const [formData, setFormData] = useState<ContactFormData>({
     name: username || "",
+    email: "",  // New: initial empty
     subject: "",
     message: "",
   });
@@ -24,6 +26,8 @@ const Contact = () => {
 
   const validateForm = useCallback(() => {
     if (!formData.name.trim()) return "Name is required.";
+    if (!formData.email.trim()) return "Email is required.";
+    if (!/\S+@\S+\.\S+/.test(formData.email)) return "Invalid email format.";
     if (!formData.subject.trim()) return "Subject is required.";
     if (!formData.message.trim()) return "Message is required.";
     return null;
@@ -42,7 +46,7 @@ const Contact = () => {
     try {
       const api = createApiInstance(token);
       await api.post("/contact", formData, { withCredentials: true });
-      setFormData({ name: username || "", subject: "", message: "" });
+      setFormData({ name: username || "", email: "", subject: "", message: "" });
       toast.success("Message sent successfully! We'll get back to you soon.");
     } catch (error: unknown) {
       const message =
@@ -128,6 +132,21 @@ const Contact = () => {
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-6 py-4 bg-white border border-gray-300 rounded-2xl text-gray-900 focus:border-gray-900 focus:ring-4 focus:ring-gray-900/10 outline-none transition text-base"
+                    disabled={isLoading}
+                    required
+                  />
+                </div>
+
+                <div>  # New: Email field
+                  <label htmlFor="email" className="block text-xs font-light text-gray-600 uppercase tracking-widest mb-3">
+                    Email
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full px-6 py-4 bg-white border border-gray-300 rounded-2xl text-gray-900 focus:border-gray-900 focus:ring-4 focus:ring-gray-900/10 outline-none transition text-base"
                     disabled={isLoading}
                     required
