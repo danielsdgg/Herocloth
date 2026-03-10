@@ -36,12 +36,34 @@ interface WishlistGroup {
   }[];
 }
 
+interface Contact {
+  id: number;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  created_at: string;
+  user_id: number | null;
+}
+
+// Matches your actual /order/all response
+interface Order {
+  id: number;
+  created_at: string;
+  status: string;
+  total: number | null;
+  user_name: string;
+}
+
 const AdminDashboard = () => {
   const { token, firstname, lastname, userId, setAuth } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [wishlists, setWishlists] = useState<WishlistGroup[]>([]); // ← New: all wishlists
+  const [wishlists, setWishlists] = useState<WishlistGroup[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [userSearch, setUserSearch] = useState("");
   const [newProduct, setNewProduct] = useState({
     name: "", description: "", price: 0, stock: 0,
@@ -51,9 +73,11 @@ const AdminDashboard = () => {
   const [editUser, setEditUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState<"users" | "products" | "create" | "reviews" | "wishlists">("users");
+  const [activeSection, setActiveSection] = useState<
+    "users" | "products" | "create" | "reviews" | "wishlists" | "contacts" | "orders"
+  >("users");
 
-  // Close sidebar when section changes on mobile
+  // Close sidebar on mobile when section changes
   useEffect(() => {
     if (window.innerWidth < 1024) setSidebarOpen(false);
   }, [activeSection]);
@@ -94,7 +118,7 @@ const AdminDashboard = () => {
     fetch();
   }, [token]);
 
-  // Fetch reviews when section is active
+  // Fetch reviews when active
   useEffect(() => {
     if (!token || activeSection !== "reviews") return;
     const fetch = async () => {
@@ -125,7 +149,7 @@ const AdminDashboard = () => {
     fetch();
   }, [token, activeSection]);
 
-  // Fetch all wishlists when section is active (new)
+  // Fetch wishlists when active
   useEffect(() => {
     if (!token || activeSection !== "wishlists") return;
     const fetchWishlists = async () => {
@@ -141,6 +165,42 @@ const AdminDashboard = () => {
       }
     };
     fetchWishlists();
+  }, [token, activeSection]);
+
+  // Fetch contacts when active
+  useEffect(() => {
+    if (!token || activeSection !== "contacts") return;
+    const fetchContacts = async () => {
+      setIsLoading(true);
+      try {
+        const api = createApiInstance(token);
+        const res = await api.get<Contact[]>("/contact/all", { withCredentials: true });
+        setContacts(res.data);
+      } catch {
+        toast.error("Failed to load contact submissions");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchContacts();
+  }, [token, activeSection]);
+
+  // Fetch orders when active
+  useEffect(() => {
+    if (!token || activeSection !== "orders") return;
+    const fetchOrders = async () => {
+      setIsLoading(true);
+      try {
+        const api = createApiInstance(token);
+        const res = await api.get<Order[]>("/order/all", { withCredentials: true });
+        setOrders(res.data);
+      } catch {
+        toast.error("Failed to load orders");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchOrders();
   }, [token, activeSection]);
 
   const filteredUsers = useMemo(() => {
@@ -248,6 +308,40 @@ const AdminDashboard = () => {
     }
   }, [token, userId]);
 
+  const handleDeleteContact = useCallback(async (id: number) => {
+    if (!window.confirm("Delete this contact message?")) return;
+    setIsLoading(true);
+    try {
+      const api = createApiInstance(token);
+      await api.delete(`/contact/${id}`, { withCredentials: true });
+      setContacts(prev => prev.filter(c => c.id !== id));
+      toast.success("Contact message deleted");
+    } catch {
+      toast.error("Failed to delete contact message");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [token]);
+
+  const handleDeleteOrder = useCallback(async (id: number) => {
+    if (!window.confirm("Delete this order? This action cannot be undone.")) return;
+    setIsLoading(true);
+    try {
+      const api = createApiInstance(token);
+      await api.delete(`/order/${id}`, { withCredentials: true });
+      setOrders(prev => prev.filter(o => o.id !== id));
+      toast.success("Order deleted");
+    } catch {
+      toast.error("Failed to delete order");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [token]);
+
+  const handleViewOrder = useCallback((order: Order) => {
+    setSelectedOrder(order);
+  }, []);
+
   const inputFields = [
     { key: "name", label: "Product Name *", type: "text" },
     { key: "description", label: "Description", type: "text" },
@@ -280,7 +374,7 @@ const AdminDashboard = () => {
           <div className="p-10">
             <h2 className="text-2xl mt-25 font-extralight tracking-widest mb-16 text-gray-300">Admin Panel</h2>
             <nav className="space-y-3">
-              {["users", "create", "products", "reviews", "wishlists"].map(sec => (
+              {["users", "create", "products", "reviews", "wishlists", "contacts", "orders"].map(sec => (
                 <button
                   key={sec}
                   onClick={() => {
@@ -291,7 +385,13 @@ const AdminDashboard = () => {
                     activeSection === sec ? "bg-white/10 border border-white/20 shadow-lg" : "hover:bg-white/5"
                   }`}
                 >
-                  {sec === "users" ? "Manage Users" : sec === "create" ? "Create Product" : sec === "products" ? "Manage Products" : sec === "reviews" ? "View Reviews" : "All Wishlists"}
+                  {sec === "users" ? "Manage Users" :
+                   sec === "create" ? "Create Product" :
+                   sec === "products" ? "Manage Products" :
+                   sec === "reviews" ? "View Reviews" :
+                   sec === "wishlists" ? "All Wishlists" :
+                   sec === "contacts" ? "Contact Submissions" :
+                   "Manage Orders"}
                 </button>
               ))}
             </nav>
@@ -373,7 +473,7 @@ const AdminDashboard = () => {
               </motion.div>
             )}
 
-            {/* Create Product */}
+            {/* Create Product - unchanged */}
             {activeSection === "create" && (
               <motion.div key="create" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }}>
                 <h2 className="text-3xl sm:text-4xl font-extralight tracking-widest mb-12">Create New Product</h2>
@@ -411,7 +511,7 @@ const AdminDashboard = () => {
               </motion.div>
             )}
 
-            {/* Products */}
+            {/* Products - unchanged */}
             {activeSection === "products" && (
               <motion.div key="products" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }}>
                 <div className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -446,7 +546,7 @@ const AdminDashboard = () => {
               </motion.div>
             )}
 
-            {/* Reviews */}
+            {/* Reviews - unchanged */}
             {activeSection === "reviews" && (
               <motion.div key="reviews" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }}>
                 <div className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -494,7 +594,7 @@ const AdminDashboard = () => {
               </motion.div>
             )}
 
-            {/* Wishlists - New Section */}
+            {/* Wishlists - unchanged */}
             {activeSection === "wishlists" && (
               <motion.div key="wishlists" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }}>
                 <div className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -535,9 +635,130 @@ const AdminDashboard = () => {
                 )}
               </motion.div>
             )}
+
+            {/* Contacts - unchanged */}
+            {activeSection === "contacts" && (
+              <motion.div key="contacts" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }}>
+                <div className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <h2 className="text-3xl sm:text-4xl font-extralight tracking-widest">Contact Submissions</h2>
+                  <p className="text-gray-500 text-base sm:text-lg">Total: {contacts.length}</p>
+                </div>
+
+                {contacts.length === 0 ? (
+                  <p className="text-center py-20 sm:py-32 text-gray-400 text-base sm:text-lg">No contact messages yet.</p>
+                ) : (
+                  <div className="overflow-x-auto bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl">
+                    <table className="w-full min-w-[800px]">
+                      <thead className="bg-white/5 border-b border-white/10">
+                        <tr>
+                          <th className="px-6 py-6 text-left text-xs uppercase tracking-widest text-gray-500">Name</th>
+                          <th className="px-6 py-6 text-left text-xs uppercase tracking-widest text-gray-500">Email</th>
+                          <th className="px-6 py-6 text-left text-xs uppercase tracking-widest text-gray-500">Subject</th>
+                          <th className="px-6 py-6 text-left text-xs uppercase tracking-widest text-gray-500">Message</th>
+                          <th className="px-6 py-6 text-left text-xs uppercase tracking-widest text-gray-500">Date</th>
+                          <th className="px-6 py-6 text-left text-xs uppercase tracking-widest text-gray-500">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {contacts.map(c => (
+                          <tr key={c.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                            <td className="px-6 py-6 text-sm font-light whitespace-nowrap">{c.name}</td>
+                            <td className="px-6 py-6 text-sm text-gray-400 whitespace-nowrap">{c.email || "—"}</td>
+                            <td className="px-6 py-6 text-sm text-gray-300 whitespace-nowrap">{c.subject}</td>
+                            <td className="px-6 py-6 text-sm text-gray-400 max-w-xs truncate">{c.message}</td>
+                            <td className="px-6 py-6 text-sm text-gray-500 whitespace-nowrap">
+                              {new Date(c.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                            </td>
+                            <td className="px-6 py-6 flex gap-3">
+                              <button onClick={() => toast.info(`Full message:\n${c.message}`)} 
+                                className="py-3 px-5 bg-white/10 border border-white/20 rounded-2xl hover:bg-white/20 text-xs">
+                                View
+                              </button>
+                              <button onClick={() => handleDeleteContact(c.id)}
+                                className="py-3 px-5 bg-red-900/20 border border-red-900/50 rounded-2xl hover:bg-red-900/30 text-xs">
+                                Delete
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* Orders Section */}
+            {activeSection === "orders" && (
+              <motion.div key="orders" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }}>
+                <div className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <h2 className="text-3xl sm:text-4xl font-extralight tracking-widest">Manage Orders</h2>
+                  <p className="text-gray-500 text-base sm:text-lg">Total: {orders.length}</p>
+                </div>
+
+                {orders.length === 0 ? (
+                  <p className="text-center py-20 sm:py-32 text-gray-400 text-base sm:text-lg">No orders yet.</p>
+                ) : (
+                  <div className="overflow-x-auto bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl">
+                    <table className="w-full min-w-[900px]">
+                      <thead className="bg-white/5 border-b border-white/10">
+                        <tr>
+                          <th className="px-6 py-6 text-left text-xs uppercase tracking-widest text-gray-500">Order ID</th>
+                          <th className="px-6 py-6 text-left text-xs uppercase tracking-widest text-gray-500">Customer</th>
+                          <th className="px-6 py-6 text-left text-xs uppercase tracking-widest text-gray-500">Total</th>
+                          <th className="px-6 py-6 text-left text-xs uppercase tracking-widest text-gray-500">Status</th>
+                          <th className="px-6 py-6 text-left text-xs uppercase tracking-widest text-gray-500">Payment Type</th>
+                          <th className="px-6 py-6 text-left text-xs uppercase tracking-widest text-gray-500">Date</th>
+                          <th className="px-6 py-6 text-left text-xs uppercase tracking-widest text-gray-500">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {orders.map(o => (
+                          <tr key={o.id} className="border-b border-white/5 hover:bg-white/5 transition">
+                            <td className="px-6 py-6 text-sm font-light whitespace-nowrap">#{o.id}</td>
+                            <td className="px-6 py-6 text-sm text-gray-300 whitespace-nowrap">{o.user_name || "—"}</td>
+                            <td className="px-6 py-6 text-sm text-gray-200 whitespace-nowrap">
+                              {o.total != null ? `KSh ${Number(o.total).toFixed(2)}` : "—"}
+                            </td>
+                            <td className="px-6 py-6 text-sm whitespace-nowrap">
+                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                o.status?.includes("delivered") || o.status?.includes("completed") ? "bg-green-900/40 text-green-300" :
+                                o.status?.includes("shipped") ? "bg-blue-900/40 text-blue-300" :
+                                o.status?.includes("paid") ? "bg-purple-900/40 text-purple-300" :
+                                o.status === "cod" ? "bg-orange-900/40 text-orange-300" :
+                                o.status?.includes("cancelled") ? "bg-red-900/40 text-red-300" :
+                                "bg-yellow-900/40 text-yellow-300"
+                              }`}>
+                                {o.status?.toUpperCase() || "UNKNOWN"}
+                              </span>
+                            </td>
+                            <td className="px-6 py-6 text-sm text-gray-400 whitespace-nowrap">
+                              {o.status === "cod" ? "Postpay (COD)" : "Prepay"}
+                            </td>
+                            <td className="px-6 py-6 text-sm text-gray-500 whitespace-nowrap">
+                              {o.created_at ? new Date(o.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}
+                            </td>
+                            <td className="px-6 py-6 flex gap-3">
+                              <button onClick={() => handleViewOrder(o)}
+                                className="py-3 px-5 bg-white/10 border border-white/20 rounded-2xl hover:bg-white/20 text-xs">
+                                View
+                              </button>
+                              <button onClick={() => handleDeleteOrder(o.id)}
+                                className="py-3 px-5 bg-red-900/20 border border-red-900/50 rounded-2xl hover:bg-red-900/30 text-xs">
+                                Delete
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </motion.div>
+            )}
           </AnimatePresence>
 
-          {/* Edit Product Modal */}
+          {/* Edit Product Modal - unchanged */}
           <AnimatePresence>
             {editProduct && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -583,7 +804,7 @@ const AdminDashboard = () => {
             )}
           </AnimatePresence>
 
-          {/* Edit User Role Modal */}
+          {/* Edit User Role Modal - unchanged */}
           <AnimatePresence>
             {editUser && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -608,6 +829,64 @@ const AdminDashboard = () => {
                     </button>
                     <button onClick={() => setEditUser(null)}
                       className="flex-1 py-5 bg-white/10 border border-white/20 rounded-3xl hover:bg-white/20 text-sm">Cancel</button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Order Details Modal */}
+          <AnimatePresence>
+            {selectedOrder && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 sm:p-8">
+                <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
+                  className="bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl p-8 sm:p-12 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+                  <h2 className="text-2xl sm:text-3xl font-extralight tracking-widest mb-10">Order Details - #{selectedOrder.id}</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-10 mb-10">
+                    <div>
+                      <p className="text-gray-400 text-sm">Customer</p>
+                      <p className="text-white font-medium">{selectedOrder.user_name || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400 text-sm">Total Amount</p>
+                      <p className="text-white font-medium">
+                        {selectedOrder.total != null ? `KSh ${Number(selectedOrder.total).toFixed(2)}` : "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400 text-sm">Status</p>
+                      <span className={`inline-block px-4 py-1 rounded-full text-sm font-medium mt-1 ${
+                        selectedOrder.status?.includes("delivered") || selectedOrder.status?.includes("completed") ? "bg-green-900/40 text-green-300" :
+                        selectedOrder.status?.includes("shipped") ? "bg-blue-900/40 text-blue-300" :
+                        selectedOrder.status?.includes("paid") ? "bg-purple-900/40 text-purple-300" :
+                        selectedOrder.status === "cod" ? "bg-orange-900/40 text-orange-300" :
+                        selectedOrder.status?.includes("cancelled") ? "bg-red-900/40 text-red-300" :
+                        "bg-yellow-900/40 text-yellow-300"
+                      }`}>
+                        {selectedOrder.status?.toUpperCase() || "UNKNOWN"}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-gray-400 text-sm">Payment Type</p>
+                      <p className="text-white font-medium">
+                        {selectedOrder.status === "cod" ? "Postpay (Cash on Delivery)" : "Prepay"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400 text-sm">Order Date</p>
+                      <p className="text-white font-medium">
+                        {new Date(selectedOrder.created_at).toLocaleString("en-US", {
+                          dateStyle: "medium",
+                          timeStyle: "short"
+                        })}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-12 flex flex-col sm:flex-row gap-6">
+                    <button onClick={() => setSelectedOrder(null)}
+                      className="flex-1 py-5 bg-white/10 border border-white/20 rounded-3xl hover:bg-white/20 text-sm">Close</button>
                   </div>
                 </motion.div>
               </motion.div>

@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "e-commerce-flask-updated-2026",
     "name": "E-commerce Flask API",
-    "description": "Postman collection for testing Flask e-commerce backend APIs - with real M-Pesa Daraja STK Push support",
+    "description": "Postman collection for testing Flask e-commerce backend APIs - with real M-Pesa Daraja STK Push support + Contact Form endpoints",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -46,6 +46,12 @@
       "value": "254708374149",
       "type": "string",
       "description": "Test phone for STK Push (sandbox: 254708374149, PIN 254708)"
+    },
+    {
+      "key": "contactId",
+      "value": "1",
+      "type": "string",
+      "description": "Contact submission ID for testing (update after creating/viewing)"
     }
   ],
   "item": [
@@ -572,10 +578,8 @@
               "raw": "{{baseUrl}}/wishlist/add",
               "host": ["{{baseUrl}}"],
               "path": ["wishlist", "add"]
-            },
-            "description": "Adds the specified product to the authenticated user's wishlist. Returns 409 if already present."
-          },
-          "response": []
+            }
+          }
         },
         {
           "name": "Remove from Wishlist",
@@ -591,10 +595,8 @@
               "raw": "{{baseUrl}}/wishlist/remove/{{productId}}",
               "host": ["{{baseUrl}}"],
               "path": ["wishlist", "remove", "{{productId}}"]
-            },
-            "description": "Removes a specific product from the authenticated user's wishlist by product ID."
-          },
-          "response": []
+            }
+          }
         },
         {
           "name": "Clear Entire Wishlist",
@@ -610,10 +612,8 @@
               "raw": "{{baseUrl}}/wishlist/clear",
               "host": ["{{baseUrl}}"],
               "path": ["wishlist", "clear"]
-            },
-            "description": "Deletes ALL items from the authenticated user's wishlist in one operation. Safe even if already empty."
-          },
-          "response": []
+            }
+          }
         },
         {
           "name": "Get My Wishlist",
@@ -629,10 +629,8 @@
               "raw": "{{baseUrl}}/wishlist/my-wishlist",
               "host": ["{{baseUrl}}"],
               "path": ["wishlist", "my-wishlist"]
-            },
-            "description": "Returns the current user's wishlist items with product details (name, price, image1, category, added_at)."
-          },
-          "response": []
+            }
+          }
         },
         {
           "name": "Get All Wishlists (Admin Only)",
@@ -648,13 +646,10 @@
               "raw": "{{baseUrl}}/wishlist/all",
               "host": ["{{baseUrl}}"],
               "path": ["wishlist", "all"]
-            },
-            "description": "Admin-only endpoint. Returns aggregated wishlist data for all users who have wishlist items (includes summary stats and full item list per user)."
-          },
-          "response": []
+            }
+          }
         }
-      ],
-      "description": "Wishlist management endpoints (user + admin)"
+      ]
     },
     {
       "name": "Orders",
@@ -681,8 +676,7 @@
               "raw": "{{baseUrl}}/order/create",
               "host": ["{{baseUrl}}"],
               "path": ["order", "create"]
-            },
-            "description": "Creates prepay order with M-Pesa and Nairobi delivery (fee 200 added). Use this before testing STK Push."
+            }
           }
         },
         {
@@ -707,8 +701,7 @@
               "raw": "{{baseUrl}}/order/create",
               "host": ["{{baseUrl}}"],
               "path": ["order", "create"]
-            },
-            "description": "Postpay order - delivery fee 200 added for Nairobi"
+            }
           }
         },
         {
@@ -733,8 +726,7 @@
               "raw": "{{baseUrl}}/order/create",
               "host": ["{{baseUrl}}"],
               "path": ["order", "create"]
-            },
-            "description": "Postpay order - no delivery fee added"
+            }
           }
         },
         {
@@ -832,8 +824,7 @@
               "raw": "{{baseUrl}}/mpesa/stk-push",
               "host": ["{{baseUrl}}"],
               "path": ["mpesa", "stk-push"]
-            },
-            "description": "Triggers real M-Pesa STK Push (sandbox phone: 254708374149, PIN: 254708). Create an order first and update orderId variable."
+            }
           }
         },
         {
@@ -856,8 +847,7 @@
                   "value": "client_credentials"
                 }
               ]
-            },
-            "description": "Directly test Daraja OAuth (base64 of consumer key:secret in Authorization header). Useful for debugging."
+            }
           }
         },
         {
@@ -878,12 +868,123 @@
               "raw": "{{baseUrl}}/mpesa/callback",
               "host": ["{{baseUrl}}"],
               "path": ["mpesa", "callback"]
-            },
-            "description": "Simulate successful STK Push callback from Safaricom (ResultCode 0). Test your webhook endpoint."
+            }
           }
         }
+      ]
+    },
+    {
+      "name": "Contact",
+      "item": [
+        {
+          "name": "Submit Contact Message (Public)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"subject\": \"Inquiry about custom order\",\n  \"message\": \"Hello team, I would like to know more about custom sizing options. Thanks!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/contact",
+              "host": ["{{baseUrl}}"],
+              "path": ["contact"]
+            },
+            "description": "Public endpoint to submit a contact form. Optional JWT (guest or logged-in user). Returns 201 on success."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Contact Submissions (Admin Only)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contact/all",
+              "host": ["{{baseUrl}}"],
+              "path": ["contact", "all"]
+            },
+            "description": "Admin-only: Returns list of all contact submissions with name, email, subject, message, created_at, user_id."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Contact Submission (Admin or Owner)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contact/{{contactId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["contact", "{{contactId}}"]
+            },
+            "description": "Get one specific contact message. Admin sees all; owner (if logged in) sees their own."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Contact Submission (Admin Only)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\",\n  \"email\": \"updated@example.com\",\n  \"subject\": \"Updated Subject\",\n  \"message\": \"Updated message content here.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/contact/{{contactId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["contact", "{{contactId}}"]
+            },
+            "description": "Admin-only: Update any field of a contact submission."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Contact Submission (Admin Only)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contact/{{contactId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["contact", "{{contactId}}"]
+            },
+            "description": "Admin-only: Permanently delete a contact message."
+          },
+          "response": []
+        }
       ],
-      "description": "Real M-Pesa Daraja STK Push integration and testing"
+      "description": "Contact form submissions - public submit + admin management"
     }
   ]
 }

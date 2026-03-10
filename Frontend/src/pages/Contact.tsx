@@ -68,7 +68,7 @@ const Contact = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1 }}
-          className="relative py-32 overflow-hidden"
+          className="relative py-10 overflow-hidden"
         >
           <div className="absolute inset-0 bg-black/5" />
           <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 text-center">
@@ -138,7 +138,7 @@ const Contact = () => {
                   />
                 </div>
 
-                <div>  # New: Email field
+                <div>  
                   <label htmlFor="email" className="block text-xs font-light text-gray-600 uppercase tracking-widest mb-3">
                     Email
                   </label>

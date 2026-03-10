@@ -9,25 +9,29 @@ from datetime import datetime
 
 contact_bp = Blueprint('contact', __name__)
 
-# POST /contact - Submit contact form (public, optional auth, sends formatted email)
+# POST /contact - Submit contact form (public, optional auth, sends emails to both admin & user)
 @contact_bp.route('/contact', methods=['POST'])
 @jwt_required(optional=True)
 @cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
 def submit_contact():
     data = request.get_json()
     name = data.get('name')
-    email = data.get('email')          # Now captured from frontend
+    email = data.get('email')  # Required from frontend
     subject = data.get('subject')
     message = data.get('message')
 
-    if not name or not subject or not message:
-        return jsonify({"msg": "Name, subject, and message are required"}), 400
+    if not name or not email or not subject or not message:
+        return jsonify({"msg": "Name, email, subject, and message are required"}), 400
+
+    # Basic email validation (server-side)
+    if '@' not in email or '.' not in email.split('@')[-1]:
+        return jsonify({"msg": "Please provide a valid email address"}), 400
 
     user_id = get_jwt_identity()  # Will be None if not authenticated
 
     contact = Contact(
         name=name,
-        email=email,                   # Now stored in DB
+        email=email,
         subject=subject,
         message=message,
         user_id=user_id
@@ -37,8 +41,8 @@ def submit_contact():
         db.session.add(contact)
         db.session.commit()
 
-        # Beautiful HTML email for Gmail
-        html_body = f"""
+        # === Email 1: To Admin (detailed) ===
+        admin_html = f"""
         <!DOCTYPE html>
         <html lang="en">
         <head>
@@ -70,7 +74,7 @@ def submit_contact():
               <p class="value">{name}</p>
 
               <span class="label">Email Address</span>
-              <p class="value">{email if email else 'Not provided'}</p>
+              <p class="value">{email}</p>
 
               <span class="label">User ID</span>
               <p class="value">{user_id if user_id else 'Guest (not logged in)'}</p>
@@ -83,7 +87,9 @@ def submit_contact():
                 {message.replace('\n', '<br>')}
               </div>
 
-              {f'<a href="mailto:{email}?subject=Re:%20{subject.replace(" ", "%20")}" class="button">Reply to {name}</a>' if email else '<p class="value">Reply not possible (email not provided)</p>'}
+              <a href="mailto:{email}?subject=Re:%20{subject.replace(' ', '%20')}" class="button">
+                Reply to {name}
+              </a>
             </div>
             <div class="footer">
               Received on {datetime.utcnow().strftime('%B %d, %Y at %I:%M %p UTC')} via Herocloth Contact Form<br>
@@ -94,39 +100,108 @@ def submit_contact():
         </html>
         """
 
-        # Plain text fallback
-        plain_body = f"""
+        admin_plain = f"""
 New Contact Form Submission
 ============================
 
 From: {name}
-Email: {email if email else 'Not provided'}
+Email: {email}
 User ID: {user_id or 'Guest (not logged in)'}
 Subject: {subject}
 
 Message:
 {message}
 
-Reply directly: {f"mailto:{email}?subject=Re: {subject}" if email else 'Email not provided'}
+Reply directly: mailto:{email}?subject=Re: {subject}
 Received: {datetime.utcnow().strftime('%B %d, %Y at %I:%M %p UTC')}
         """
 
-        msg = Message(
+        admin_msg = Message(
             subject=f"New Contact: {subject}",
             recipients=['danieldeploys@gmail.com'],
             sender=('Herocloth Contact Form', 'danieldeploys@gmail.com'),
-            body=plain_body,
-            html=html_body
+            body=admin_plain,
+            html=admin_html
         )
-        mail.send(msg)
+        mail.send(admin_msg)
 
-        current_app.logger.info(f"Contact submitted: id={contact.id}, subject={subject}")
-        return jsonify({"msg": "Message sent successfully! We'll get back to you soon."}), 201
+        # === Email 2: Confirmation to User (friendly feedback) ===
+        user_html = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Thank You - Herocloth</title>
+          <style>
+            body {{ font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; color: #333; line-height: 1.6; }}
+            .container {{ max-width: 600px; margin: 30px auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.1); }}
+            .header {{ background: linear-gradient(135deg, #111111, #1a1a1a); color: white; padding: 40px 50px; text-align: center; }}
+            .header h1 {{ margin: 0; font-size: 28px; font-weight: 300; letter-spacing: 1px; }}
+            .content {{ padding: 40px 50px; text-align: center; }}
+            .content h2 {{ color: #111; font-weight: 400; margin-bottom: 20px; }}
+            .content p {{ font-size: 16px; margin-bottom: 24px; }}
+            .highlight {{ color: #111; font-weight: 600; }}
+            .footer {{ background: #f8f8f8; padding: 24px 50px; text-align: center; font-size: 13px; color: #777; border-top: 1px solid #eee; }}
+            .footer a {{ color: #111111; text-decoration: none; }}
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Thank You!</h1>
+            </div>
+            <div class="content">
+              <h2>Your message has been received</h2>
+              <p>Dear <span class="highlight">{name}</span>,</p>
+              <p>We’ve successfully received your enquiry and our team will review it shortly.</p>
+              <p>You can expect a response within 24–48 hours. Thank you for reaching out to us — we truly appreciate your interest in Herocloth.</p>
+              <p>Warm regards,<br><strong>The Herocloth Team</strong></p>
+            </div>
+            <div class="footer">
+              Herocloth • <a href="https://herocloth.com">herocloth.com</a><br>
+              Received on {datetime.utcnow().strftime('%B %d, %Y')}
+            </div>
+          </div>
+        </body>
+        </html>
+        """
+
+        user_plain = f"""
+Thank You for Your Message!
+===========================
+
+Dear {name},
+
+Your enquiry has been received successfully.
+Our team will get back to you within 24–48 hours.
+
+Thank you for choosing Herocloth!
+
+Best regards,
+The Herocloth Team
+herocloth.com
+
+Received: {datetime.utcnow().strftime('%B %d, %Y')}
+        """
+
+        user_msg = Message(
+            subject="Thank You – Your Message Has Been Received",
+            recipients=[email],
+            sender=('Herocloth Team', 'danieldeploys@gmail.com'),
+            reply_to='danieldeploys@gmail.com',  # Optional: replies go to you
+            body=user_plain,
+            html=user_html
+        )
+        mail.send(user_msg)
+
+        current_app.logger.info(f"Contact submitted: id={contact.id}, subject={subject}, user_email={email}")
+        return jsonify({"msg": "Message sent successfully! We've sent you a confirmation email."}), 201
 
     except Exception as e:
         db.session.rollback()
         current_app.logger.exception(f"Error submitting contact: {str(e)}")
-        return jsonify({"msg": "Failed to send message"}), 500
+        return jsonify({"msg": "Failed to send message. Please try again later."}), 500
 
 
 # GET /contact/all - Get all submissions (admin only)
@@ -145,7 +220,7 @@ def get_all_contacts():
             {
                 "id": c.id,
                 "name": c.name,
-                "email": c.email,               # Now available since we added it to model
+                "email": c.email,
                 "subject": c.subject,
                 "message": c.message,
                 "created_at": c.created_at.isoformat(),
@@ -199,7 +274,7 @@ def update_contact(id):
 
     data = request.get_json()
     contact.name = data.get('name', contact.name)
-    contact.email = data.get('email', contact.email)   # Now updatable
+    contact.email = data.get('email', contact.email)
     contact.subject = data.get('subject', contact.subject)
     contact.message = data.get('message', contact.message)
 
