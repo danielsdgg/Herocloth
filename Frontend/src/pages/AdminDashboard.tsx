@@ -382,7 +382,7 @@ const AdminDashboard = () => {
     <>
       <Navbar />
 
-      <div className="min-h-screen bg-gray-50 text-gray-900">
+      <div className="min-h-screen bg-gray-50 text-gray-900 mt-10">
 
         {/* ── Main Content with Tabs ── */}
         <main className="p-6 sm:p-8 lg:p-10 max-w-7xl mx-auto">
