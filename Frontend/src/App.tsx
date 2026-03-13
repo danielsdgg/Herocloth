@@ -14,6 +14,7 @@ import Contact from "./pages/Contact";
 import Payment from "./payment/Payment";
 import Orders from "./order/OrdersHistory";
 import ClientDashboard from "./pages/ClientDashboard";
+import Shop from "./pages/Shop";
 
 const AppContent = () => {
   const location = useLocation();
@@ -58,6 +59,7 @@ const AppContent = () => {
         <Route path="/contact" element={<Contact/>} />
         <Route path="/checkout" element={<Payment/>} />
         <Route path="/orders" element={<Orders/>} />
+        <Route path="/shop" element={<Shop/>} />
       </Routes>
 
       {shouldShowCartButton && <FloatingCartButton />}

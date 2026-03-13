@@ -5,10 +5,11 @@ import createApiInstance from "../utils/api";
 import { useAuth } from "../components/useAuth";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { FaEnvelope, FaPhone, FaMapMarkerAlt, FaPaperPlane } from "react-icons/fa";
 
 interface ContactFormData {
   name: string;
-  email: string;  // New: added email
+  email: string;
   subject: string;
   message: string;
 }
@@ -17,7 +18,7 @@ const Contact = () => {
   const { token, username } = useAuth();
   const [formData, setFormData] = useState<ContactFormData>({
     name: username || "",
-    email: "",  // New: initial empty
+    email: "",
     subject: "",
     message: "",
   });
@@ -47,7 +48,7 @@ const Contact = () => {
       const api = createApiInstance(token);
       await api.post("/contact", formData, { withCredentials: true });
       setFormData({ name: username || "", email: "", subject: "", message: "" });
-      toast.success("Message sent successfully! We'll get back to you soon.");
+      toast.success("Message sent! We'll respond shortly.");
     } catch (error: unknown) {
       const message =
         (error as { response?: { data?: { msg: string } } }).response?.data?.msg ||
@@ -62,220 +63,192 @@ const Contact = () => {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-white text-gray-900">
-        {/* Elegant Hero Section - Black & White Luxury */}
-        <motion.section
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1 }}
-          className="relative py-10 overflow-hidden"
-        >
-          <div className="absolute inset-0 bg-black/5" />
-          <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 text-center">
-            <motion.h1
-              initial={{ y: 40, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-5xl md:text-7xl font-extralight tracking-widest text-gray-900 mb-6"
-            >
-              Contact Us
-            </motion.h1>
+
+      <div className="min-h-screen bg-gray-50">
+
+        {/* Hero / Header Section */}
+        <section className="relative py-20 lg:py-28 bg-white border-b border-gray-200">
+          <div className="max-w-5xl mx-auto px-6 text-center">
             <motion.div
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: 1 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="h-px w-32 bg-gray-400 mx-auto mb-8"
-            />
-            <motion.p
-              initial={{ y: 30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.8 }}
-              className="text-lg md:text-xl font-light text-gray-600 max-w-2xl mx-auto"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
             >
-              We’re here to assist you with any inquiries or feedback.
-            </motion.p>
-          </div>
-        </motion.section>
-
-        {/* Error */}
-        {error && (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center text-red-600 mb-12 text-sm max-w-7xl mx-auto px-6"
-          >
-            {error}
-          </motion.p>
-        )}
-
-        {/* Two Columns Layout */}
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 pb-24">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
-            {/* Left: Contact Form */}
-            <motion.div
-              initial={{ opacity: 0, x: -40 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="bg-gray-50 rounded-3xl shadow-xl p-10 lg:p-12"
-            >
-              <h2 className="text-xl font-light tracking-wide mb-10 text-gray-800">
-                Send us a message
-              </h2>
-
-              <form onSubmit={handleSubmit} className="space-y-10">
-                <div>
-                  <label htmlFor="name" className="block text-xs font-light text-gray-600 uppercase tracking-widest mb-3">
-                    Name
-                  </label>
-                  <input
-                    id="name"
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-6 py-4 bg-white border border-gray-300 rounded-2xl text-gray-900 focus:border-gray-900 focus:ring-4 focus:ring-gray-900/10 outline-none transition text-base"
-                    disabled={isLoading}
-                    required
-                  />
-                </div>
-
-                <div>  
-                  <label htmlFor="email" className="block text-xs font-light text-gray-600 uppercase tracking-widest mb-3">
-                    Email
-                  </label>
-                  <input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-6 py-4 bg-white border border-gray-300 rounded-2xl text-gray-900 focus:border-gray-900 focus:ring-4 focus:ring-gray-900/10 outline-none transition text-base"
-                    disabled={isLoading}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="subject" className="block text-xs font-light text-gray-600 uppercase tracking-widest mb-3">
-                    Subject
-                  </label>
-                  <input
-                    id="subject"
-                    type="text"
-                    value={formData.subject}
-                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                    className="w-full px-6 py-4 bg-white border border-gray-300 rounded-2xl text-gray-900 focus:border-gray-900 focus:ring-4 focus:ring-gray-900/10 outline-none transition text-base"
-                    disabled={isLoading}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="message" className="block text-xs font-light text-gray-600 uppercase tracking-widest mb-3">
-                    Message
-                  </label>
-                  <textarea
-                    id="message"
-                    value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    className="w-full px-6 py-4 bg-white border border-gray-300 rounded-2xl text-gray-900 focus:border-gray-900 focus:ring-4 focus:ring-gray-900/10 outline-none resize-none transition text-base h-48"
-                    disabled={isLoading}
-                    required
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full py-5 bg-gray-900 text-white text-sm font-medium uppercase tracking-widest rounded-2xl hover:bg-black transition disabled:opacity-60"
-                >
-                  {isLoading ? "Sending..." : "Send Message"}
-                </button>
-              </form>
-            </motion.div>
-
-            {/* Right: Contact Information */}
-            <motion.div
-              initial={{ opacity: 0, x: 40 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="flex flex-col justify-center space-y-12"
-            >
-              <div>
-                <p className="text-xs font-light text-gray-600 uppercase tracking-widest mb-3">Email</p>
-                <a href="mailto:support@herocloth.com" className="text-lg font-light hover:opacity-70 transition block text-gray-900">
-                  support@herocloth.com
-                </a>
-              </div>
-
-              <div>
-                <p className="text-xs font-light text-gray-600 uppercase tracking-widest mb-3">Phone</p>
-                <a href="tel:+1234567890" className="text-lg font-light hover:opacity-70 transition block text-gray-900">
-                  +1 (234) 567-890
-                </a>
-              </div>
-
-              <div>
-                <p className="text-xs font-light text-gray-600 uppercase tracking-widest mb-3">Address</p>
-                <p className="text-lg font-light leading-relaxed text-gray-800">
-                  123 Fashion Avenue<br />
-                  Style District<br />
-                  New York, NY 10001
-                </p>
-              </div>
-
-              <div>
-                <p className="text-xs font-light text-gray-600 uppercase tracking-widest mb-6">Follow Us</p>
-                <div className="flex space-x-8">
-                  {/* Facebook */}
-                  <a 
-                    href="https://facebook.com/herocloth" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="hover:opacity-70 transition"
-                    aria-label="Follow us on Facebook"
-                  >
-                    <svg className="w-10 h-10" fill="#1877F2" viewBox="0 0 24 24">
-                      <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
-                    </svg>
-                  </a>
-
-                  {/* Instagram */}
-                  <a 
-                    href="https://instagram.com/herocloth" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="hover:opacity-70 transition"
-                    aria-label="Follow us on Instagram"
-                  >
-                    <svg className="w-10 h-10" fill="url(#instagram-gradient)" viewBox="0 0 24 24">
-                      <defs>
-                        <radialGradient id="instagram-gradient" r="150%" cx="30%" cy="107%">
-                          <stop stopColor="#f58529" offset="0" />
-                          <stop stopColor="#dd2a7b" offset="0.5" />
-                          <stop stopColor="#515bd4" offset="1" />
-                        </radialGradient>
-                      </defs>
-                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.332.014 7.052.072 3.775.227 2.065 1.91 1.91 5.192.014 8.332 0 8.741 0 12c0 3.259.014 3.668.072 4.948.227 3.278 1.91 4.988 5.192 5.143 1.28.058 1.689.072 4.948.072s3.668-.014 4.948-.072c3.278-.227 4.988-1.91 5.143-5.192.058-1.28.072-1.689.072-4.948s-.014-3.668-.072-4.948c-.227-3.278-1.91-4.988-5.192-5.143C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zm0 10.162a3.999 3.999 0 110-7.998 3.999 3.999 0 010 7.998zm6.406-11.845a1.44 1.44 0 11-2.88 0 1.44 1.44 0 012.88 0z" />
-                    </svg>
-                  </a>
-
-                  {/* X (Twitter) */}
-                  <a 
-                    href="https://x.com/herocloth" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="hover:opacity-70 transition"
-                    aria-label="Follow us on X"
-                  >
-                    <svg className="w-10 h-10" fill="#000000" viewBox="0 0 24 24">
-                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                    </svg>
-                  </a>
-                </div>
-              </div>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-light text-gray-900 tracking-tight mb-6">
+                Get in Touch
+              </h1>
+              <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
+                Have a question, suggestion, or just want to say hello? We'd love to hear from you.
+              </p>
             </motion.div>
           </div>
-        </div>
+        </section>
+
+        {/* Main Content */}
+        <section className="py-16 lg:py-24">
+          <div className="max-w-5xl mx-auto px-6">
+            <div className="grid lg:grid-cols-5 gap-12 lg:gap-16">
+              {/* Form – Left side (larger column) */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7 }}
+                className="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-gray-100 p-8 lg:p-12"
+              >
+                {error && (
+                  <div className="mb-8 p-4 bg-red-50 border border-red-100 text-red-700 rounded-xl text-center">
+                    {error}
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-8">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                        Name *
+                      </label>
+                      <input
+                        id="name"
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className="w-full px-5 py-3.5 border border-gray-300 rounded-xl focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition text-gray-900 placeholder-gray-400"
+                        placeholder="Your name"
+                        disabled={isLoading}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                        Email *
+                      </label>
+                      <input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className="w-full px-5 py-3.5 border border-gray-300 rounded-xl focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition text-gray-900 placeholder-gray-400"
+                        placeholder="your@email.com"
+                        disabled={isLoading}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
+                      Subject *
+                    </label>
+                    <input
+                      id="subject"
+                      type="text"
+                      value={formData.subject}
+                      onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                      className="w-full px-5 py-3.5 border border-gray-300 rounded-xl focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition text-gray-900 placeholder-gray-400"
+                      placeholder="How can we help?"
+                      disabled={isLoading}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+                      Message *
+                    </label>
+                    <textarea
+                      id="message"
+                      value={formData.message}
+                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                      rows={6}
+                      className="w-full px-5 py-3.5 border border-gray-300 rounded-xl focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 outline-none transition text-gray-900 placeholder-gray-400 resize-none"
+                      placeholder="Your message here..."
+                      disabled={isLoading}
+                      required
+                    />
+                  </div>
+
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-4 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition disabled:opacity-60 flex items-center justify-center gap-3 shadow-sm hover:shadow-md"
+                  >
+                    <FaPaperPlane className={isLoading ? "animate-pulse" : ""} />
+                    {isLoading ? "Sending..." : "Send Message"}
+                  </motion.button>
+                </form>
+              </motion.div>
+
+              {/* Contact Info – Right side */}
+              <motion.aside
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7, delay: 0.2 }}
+                className="lg:col-span-2 space-y-8"
+              >
+                {[
+                  {
+                    icon: <FaEnvelope className="text-2xl text-indigo-600" />,
+                    title: "Email Us",
+                    content: (
+                      <a
+                        href="mailto:support@herocloth.com"
+                        className="text-indigo-600 hover:underline font-medium"
+                      >
+                        support@herocloth.com
+                      </a>
+                    ),
+                    desc: "We usually reply within 24 hours",
+                  },
+                  {
+                    icon: <FaPhone className="text-2xl text-indigo-600" />,
+                    title: "Call Us",
+                    content: (
+                      <a
+                        href="tel:+1234567890"
+                        className="text-indigo-600 hover:underline font-medium"
+                      >
+                        +1 (234) 567-890
+                      </a>
+                    ),
+                    desc: "Mon–Fri, 9AM–6PM EAT",
+                  },
+                  {
+                    icon: <FaMapMarkerAlt className="text-2xl text-indigo-600" />,
+                    title: "Visit Us",
+                    content: (
+                      <span className="font-medium">
+                        123 Fashion Avenue<br />
+                        Nairobi, Kenya
+                      </span>
+                    ),
+                    desc: "By appointment only",
+                  },
+                ].map((item, i) => (
+                  <div
+                    key={i}
+                    className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-start gap-5">
+                      <div className="mt-1">{item.icon}</div>
+                      <div>
+                        <h3 className="text-xl font-medium text-gray-900 mb-2">{item.title}</h3>
+                        <div className="text-gray-700 mb-2">{item.content}</div>
+                        <p className="text-sm text-gray-500">{item.desc}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </motion.aside>
+            </div>
+          </div>
+        </section>
       </div>
+
       <Footer />
     </>
   );

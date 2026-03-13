@@ -1,14 +1,14 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { motion } from "framer-motion";
 import createApiInstance from "../utils/api";
 import { type Product } from "../types";
 import { useCart } from "../Context/useCart";
 import { useAuth } from "../components/useAuth";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { FaHeart } from "react-icons/fa";
-import { motion } from "framer-motion";
+import { FaHeart, FaShoppingCart } from "react-icons/fa";
 
 interface ProductWithRating extends Product {
   average_rating: number;
@@ -21,57 +21,57 @@ const Home = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [sortOption, setSortOption] = useState<string>("default");
   const [wishlistIds, setWishlistIds] = useState<number[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   const { addToCart, isLoading: cartLoading } = useCart();
   const { token } = useAuth();
   const navigate = useNavigate();
 
-  const inferCategory = (productName: string): string => {
-    const name = productName.toLowerCase();
-    if (name.includes("jeans") || name.includes("pants") || name.includes("trousers")) return "bottoms";
-    if (name.includes("top") || name.includes("blouse")) return "tops";
-    if (name.includes("dress") || name.includes("gown")) return "dresses";
-    if (name.includes("jacket") || name.includes("coat")) return "outerwear";
-    if (name.includes("sweater")) return "sweaters";
-    if (name.includes("shirt")) return "shirts";
+  const inferCategory = (name: string): string => {
+    const n = name.toLowerCase();
+    if (n.includes("jeans") || n.includes("pants") || n.includes("trousers")) return "bottoms";
+    if (n.includes("top") || n.includes("blouse") || n.includes("shirt")) return "tops";
+    if (n.includes("dress") || n.includes("gown")) return "dresses";
+    if (n.includes("jacket") || n.includes("coat") || n.includes("outer")) return "outerwear";
+    if (n.includes("sweater") || n.includes("hoodie")) return "sweaters";
     return "other";
   };
 
   useEffect(() => {
     const fetchData = async () => {
+      setIsLoading(true);
       try {
         const api = createApiInstance(null);
-        const response = await api.get<Product[]>("/product/");
-        const productsWithCategories = response.data.map((product) => ({
-          ...product,
-          category: inferCategory(product.name),
-        }));
+        const res = await api.get<Product[]>("/product/");
+        const withCat = res.data.map(p => ({ ...p, category: inferCategory(p.name) }));
 
-        const productsWithRatings = await Promise.all(
-          productsWithCategories.map(async (product) => {
+        const withRatings = await Promise.all(
+          withCat.map(async p => {
             try {
-              const summaryRes = await api.get(`/review/product/${product.id}/rating-summary`);
+              const sum = await api.get(`/review/product/${p.id}/rating-summary`);
               return {
-                ...product,
-                average_rating: summaryRes.data.average_rating || 0,
-                review_count: summaryRes.data.review_count || 0,
+                ...p,
+                average_rating: sum.data.average_rating || 0,
+                review_count: sum.data.review_count || 0,
               };
             } catch {
-              return { ...product, average_rating: 0, review_count: 0 };
+              return { ...p, average_rating: 0, review_count: 0 };
             }
           })
         );
 
-        setProducts(productsWithRatings);
-        setFilteredProducts(productsWithRatings);
+        setProducts(withRatings);
+        setFilteredProducts(withRatings);
 
         if (token) {
-          const wishlistApi = createApiInstance(token);
-          const wishlistRes = await wishlistApi.get("/wishlist/my-wishlist");
-          const ids = wishlistRes.data.map((item: any) => item.product_id);
-          setWishlistIds(ids);
+          const wapi = createApiInstance(token);
+          const wres = await wapi.get("/wishlist/my-wishlist");
+          setWishlistIds(wres.data.map((i: any) => i.product_id));
         }
-      } catch (error: unknown) {
-        toast.error("Failed to fetch products.");
+      } catch {
+        toast.error("Failed to load products");
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -79,238 +79,248 @@ const Home = () => {
   }, [token]);
 
   useEffect(() => {
-    let result = [...products];
-    if (categoryFilter !== "all") {
-      result = result.filter((p) => p.category === categoryFilter);
-    }
-    if (sortOption === "price-low") {
-      result.sort((a, b) => a.price - b.price);
-    } else if (sortOption === "price-high") {
-      result.sort((a, b) => b.price - a.price);
-    }
-    setFilteredProducts(result);
+    let res = [...products];
+    if (categoryFilter !== "all") res = res.filter(p => p.category === categoryFilter);
+
+    if (sortOption === "price-low") res.sort((a, b) => a.price - b.price);
+    if (sortOption === "price-high") res.sort((a, b) => b.price - a.price);
+
+    setFilteredProducts(res);
   }, [products, categoryFilter, sortOption]);
 
-  const handleAddToCart = useCallback(
-    async (productId: number) => {
-      if (!token) {
-        navigate("/login");
-        return;
-      }
-      await addToCart(productId, 1);
-    },
-    [token, addToCart, navigate]
-  );
-
-  const toggleWishlist = async (productId: number) => {
+  const toggleWishlist = async (id: number) => {
     if (!token) {
-      toast.info("Please log in to add to wishlist");
+      toast.info("Log in to use wishlist");
       navigate("/login");
       return;
     }
     const api = createApiInstance(token);
-    const isInWishlist = wishlistIds.includes(productId);
+    const isWish = wishlistIds.includes(id);
     try {
-      if (isInWishlist) {
-        await api.delete(`/wishlist/remove/${productId}`);
-        setWishlistIds((prev) => prev.filter((id) => id !== productId));
+      if (isWish) {
+        await api.delete(`/wishlist/remove/${id}`);
+        setWishlistIds(prev => prev.filter(i => i !== id));
         toast.success("Removed from wishlist");
       } else {
-        await api.post("/wishlist/add", { product_id: productId });
-        setWishlistIds((prev) => [...prev, productId]);
+        await api.post("/wishlist/add", { product_id: id });
+        setWishlistIds(prev => [...prev, id]);
         toast.success("Added to wishlist");
       }
     } catch (err: any) {
-      toast.error(err.response?.data?.msg || "Failed to update wishlist");
+      toast.error(err.response?.data?.msg || "Wishlist error");
     }
   };
 
-  const renderStars = (rating: number) => {
-    const full = Math.floor(rating);
-    const half = rating % 1 >= 0.5;
-    return (
-      <div className="flex items-center gap-0.5">
-        {[1,2,3,4,5].map((s) => (
-          <span
-            key={s}
-            className={`text-base leading-none ${
-              s <= full || (s === full + 1 && half) ? "text-amber-500" : "text-stone-300"
-            }`}
-          >
-            ★
-          </span>
-        ))}
-      </div>
-    );
+  const handleAddToCart = async (id: number) => {
+    if (!token) return navigate("/login");
+    await addToCart(id, 1);
   };
 
-  // Updated categories list
-  const categories = ["all", "tops", "bottoms", "outerwear", "dresses", "sweaters", "shirts"];
+  const categories = ["all", "tops", "bottoms", "dresses", "outerwear", "sweaters", "shirts"];
+
+  const renderStars = (rating: number) => (
+    <div className="flex">
+      {[...Array(5)].map((_, i) => (
+        <span key={i} className={`text-base ${i < rating ? "text-amber-500" : "text-gray-300"}`}>
+          ★
+        </span>
+      ))}
+    </div>
+  );
 
   return (
     <>
       <Navbar />
 
-      <main className="min-h-screen bg-stone-50/70">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10 lg:py-14">
-          <div className="flex flex-col lg:flex-row gap-8 lg:gap-10 xl:gap-12">
-            {/* ── Enhanced Category Section ── */}
+      <main className="bg-gray-50 min-h-screen">
+        {/* Hero Banner */}
+        <section className="relative h-[70vh] min-h-[200px] flex items-center justify-center overflow-hidden">
+          <div className="absolute inset-0">
+            <img
+              src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1974&q=80"
+              alt="Hero fashion"
+              className="w-full h-full object-cover brightness-75"
+            />
+          </div>
+          <div className="relative z-10 text-center text-white px-6 max-w-4xl">
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1 }}
+              className="text-5xl md:text-7xl font-light tracking-wider mb-6"
+            >
+              New Season Arrivals
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.3 }}
+              className="text-xl md:text-2xl font-light mb-10"
+            >
+              Discover timeless style with modern edge
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.6 }}
+              className="flex flex-col sm:flex-row gap-6 justify-center"
+            >
+              <Link
+                to="/shop"
+                className="px-10 py-4 bg-white text-black font-medium rounded-full hover:bg-gray-100 transition text-lg"
+              >
+                Shop Now
+              </Link>
+              <Link
+                to="/contact"
+                className="px-10 py-4 border-2 border-white text-white font-medium rounded-full hover:bg-white/10 transition text-lg"
+              >
+                Get in Touch
+              </Link>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Filters + Products */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+          <div className="flex flex-col lg:flex-row gap-10">
+            {/* Sidebar Filters */}
             <motion.aside
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.7, ease: "easeOut" }}
+              initial={{ opacity: 0, x: -40 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
               className="lg:w-72 xl:w-80 flex-shrink-0"
             >
-              <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-6 md:p-7 sticky top-20">
-                <h2 className="text-xl md:text-2xl font-light text-stone-900 mb-6 md:mb-7 tracking-wide">Shop by Category</h2>
+              <div className="bg-white rounded-2xl shadow-sm p-6 lg:p-8 sticky top-20">
+                <h2 className="text-2xl font-light text-gray-900 mb-8">Filter & Sort</h2>
 
-                <div className="mb-8 md:mb-10">
-                  <ul className="space-y-2">
-                    {categories.map((cat, i) => (
-                      <motion.li
+                <div className="mb-10">
+                  <h3 className="text-sm uppercase tracking-wider text-gray-500 mb-4">Categories</h3>
+                  <div className="space-y-2">
+                    {categories.map(cat => (
+                      <button
                         key={cat}
-                        initial={{ opacity: 0, x: -15 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.06 + 0.15, duration: 0.45, ease: "easeOut" }}
+                        onClick={() => setCategoryFilter(cat)}
+                        className={`w-full text-left px-4 py-3 rounded-xl transition-all text-sm font-medium ${
+                          categoryFilter === cat
+                            ? "bg-gray-900 text-white"
+                            : "text-gray-700 hover:bg-gray-100"
+                        }`}
                       >
-                        <button
-                          onClick={() => setCategoryFilter(cat)}
-                          className={`w-full flex items-center text-left px-4 md:px-5 py-3 md:py-3.5 rounded-xl text-sm md:text-base font-medium transition-all duration-300 ${
-                            categoryFilter === cat
-                              ? "bg-stone-900 text-white shadow-md"
-                              : "text-stone-700 hover:bg-stone-50 hover:text-stone-900 hover:shadow-sm"
-                          }`}
-                        >
-                          <span className="flex-1">
-                            {cat === "all" ? "All Categories" : cat.charAt(0).toUpperCase() + cat.slice(1)}
-                          </span>
-                          {categoryFilter === cat && (
-                            <motion.span
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              className="ml-2 text-white/80 text-xs"
-                            >
-                              ✓
-                            </motion.span>
-                          )}
-                        </button>
-                      </motion.li>
+                        {cat === "all" ? "All Pieces" : cat.charAt(0).toUpperCase() + cat.slice(1)}
+                      </button>
                     ))}
-                  </ul>
+                  </div>
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-medium text-stone-600 mb-3 md:mb-4 tracking-wide uppercase">Sort By</h3>
+                  <h3 className="text-sm uppercase tracking-wider text-gray-500 mb-4">Sort By</h3>
                   <select
                     value={sortOption}
-                    onChange={(e) => setSortOption(e.target.value)}
-                    className="w-full px-4 md:px-5 py-3 md:py-3.5 text-sm md:text-base border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-800/40 transition duration-300"
+                    onChange={e => setSortOption(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:border-gray-400 transition"
                   >
                     <option value="default">Featured</option>
-                    <option value="price-low">Price: Low → High</option>
-                    <option value="price-high">Price: High → Low</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="price-high">Price: High to Low</option>
                   </select>
                 </div>
               </div>
             </motion.aside>
 
-            {/* Product Grid – unchanged core logic */}
+            {/* Product Grid */}
             <section className="flex-1">
-              {filteredProducts.length === 0 ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-center py-24 md:py-32 text-stone-500 text-base md:text-lg font-light"
-                >
-                  {products.length === 0 ? "No pieces available at the moment." : "No matches for current filters."}
-                </motion.div>
+              {isLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {[...Array(8)].map((_, i) => (
+                    <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm animate-pulse">
+                      <div className="aspect-[3/4] bg-gray-200" />
+                      <div className="p-5 space-y-3">
+                        <div className="h-5 bg-gray-200 rounded w-3/4" />
+                        <div className="h-4 bg-gray-200 rounded w-1/2" />
+                        <div className="h-6 bg-gray-200 rounded w-1/3" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : filteredProducts.length === 0 ? (
+                <div className="text-center py-32 text-gray-500 text-lg">
+                  {products.length === 0 ? "No products available yet." : "No matches for your filters."}
+                </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
-                  {filteredProducts.map((product, index) => {
-                    const isInWishlist = wishlistIds.includes(product.id);
-                    const secondaryImage = (product as any).image2 || product.image1;
-
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
+                  {filteredProducts.map((p, idx) => {
+                    const inWish = wishlistIds.includes(p.id);
                     return (
-                      <motion.article
-                        key={product.id}
+                      <motion.div
+                        key={p.id}
                         initial={{ opacity: 0, y: 30 }}
                         whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true, margin: "-80px" }}
-                        transition={{ duration: 0.65, delay: index * 0.07, ease: "easeOut" }}
-                        className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-500 border border-stone-100 flex flex-col"
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6, delay: idx * 0.08 }}
+                        className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 border border-gray-100"
                       >
-                        <div className="relative overflow-hidden aspect-[3/4]">
-                          <Link to={`/product/${product.id}`} className="block h-full">
-                            <motion.img
-                              whileHover={{ scale: 1.085 }}
-                              transition={{ duration: 0.9 }}
-                              src={product.image1 || "https://via.placeholder.com/480x640?text=Product"}
-                              alt={product.name}
-                              className="w-full h-full object-cover transition-transform duration-700"
+                        <div className="relative aspect-[3/4] overflow-hidden">
+                          <Link to={`/product/${p.id}`}>
+                            <img
+                              src={p.image1 || "https://via.placeholder.com/480x640?text=Product"}
+                              alt={p.name}
+                              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                               loading="lazy"
                             />
-                            {secondaryImage && (
-                              <motion.img
-                                initial={{ opacity: 0 }}
-                                whileHover={{ opacity: 1 }}
-                                transition={{ duration: 0.4 }}
-                                src={secondaryImage}
-                                alt={`${product.name} alt`}
-                                className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                              />
-                            )}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
                           </Link>
 
-                          <motion.button
-                            whileHover={{ scale: 1.15 }}
-                            whileTap={{ scale: 0.88 }}
-                            onClick={() => toggleWishlist(product.id)}
-                            className="absolute top-3 right-3 md:top-4 md:right-4 z-20 p-2 md:p-3 rounded-full bg-white/90 backdrop-blur-md shadow-sm hover:shadow transition-all"
+                          {/* Hover overlay */}
+                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4">
+                            <button
+                              onClick={() => handleAddToCart(p.id)}
+                              disabled={cartLoading || p.stock === 0}
+                              className="p-4 bg-white rounded-full hover:bg-gray-100 transition transform hover:scale-110 disabled:opacity-50"
+                            >
+                              <FaShoppingCart className="w-6 h-6 text-gray-900" />
+                            </button>
+                            <button
+                              onClick={() => toggleWishlist(p.id)}
+                              className="p-4 bg-white rounded-full hover:bg-gray-100 transition transform hover:scale-110"
+                            >
+                              <FaHeart className={`w-6 h-6 ${inWish ? "text-rose-600" : "text-gray-400"}`} />
+                            </button>
+                          </div>
+
+                          {/* Wishlist button top-right */}
+                          <button
+                            onClick={() => toggleWishlist(p.id)}
+                            className="absolute top-4 right-4 z-10 p-3 rounded-full bg-white/90 backdrop-blur-sm shadow hover:bg-white transition"
                           >
-                            <FaHeart
-                              className={`text-xl md:text-2xl transition-all duration-300 ${
-                                isInWishlist ? "text-rose-600 scale-110" : "text-stone-400 hover:text-rose-500"
-                              }`}
-                            />
-                          </motion.button>
+                            <FaHeart className={`w-5 h-5 ${inWish ? "text-rose-600" : "text-gray-400"}`} />
+                          </button>
                         </div>
 
-                        <div className="p-4 md:p-5 flex flex-col flex-grow">
-                          <Link to={`/product/${product.id}`} className="block mb-1 md:mb-2">
-                            <h3 className="text-sm md:text-base font-medium text-stone-900 line-clamp-2 group-hover:text-stone-700 transition-colors duration-300">
-                              {product.name}
+                        <div className="p-5">
+                          <Link to={`/product/${p.id}`}>
+                            <h3 className="text-base font-medium text-gray-900 mb-1 line-clamp-2 group-hover:text-indigo-700 transition-colors">
+                              {p.name}
                             </h3>
                           </Link>
 
-                          {product.review_count > 0 && (
-                            <div className="flex items-center gap-1.5 md:gap-2 mt-1 mb-2 md:mt-2 md:mb-3">
-                              {renderStars(product.average_rating)}
-                              <span className="text-xs text-stone-500">({product.review_count})</span>
-                            </div>
-                          )}
-
-                          <div className="mt-auto">
-                            <p className="text-lg md:text-xl font-semibold text-stone-900 tracking-tight">
-                              KSh {product.price.toFixed(0)}
-                            </p>
-
-                            {product.stock === 0 && (
-                              <p className="mt-1 text-xs font-medium text-rose-600">Out of stock</p>
+                          <div className="flex items-center gap-2 mb-3">
+                            {renderStars(p.average_rating)}
+                            {p.review_count > 0 && (
+                              <span className="text-xs text-gray-500">({p.review_count})</span>
                             )}
+                          </div>
 
-                            <motion.button
-                              whileHover={{ scale: 1.02, y: -2 }}
-                              whileTap={{ scale: 0.98 }}
-                              onClick={() => handleAddToCart(product.id)}
-                              disabled={cartLoading || product.stock === 0}
-                              className="mt-4 md:mt-5 w-full py-3 md:py-3.5 px-4 md:px-6 text-sm font-medium text-white bg-stone-900 rounded-xl hover:bg-stone-800 transition-all duration-300 disabled:opacity-50 disabled:hover:bg-stone-900 shadow-sm hover:shadow active:scale-[0.98]"
-                            >
-                              Add to Cart
-                            </motion.button>
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-xl font-semibold text-gray-900">
+                              KSh {p.price.toFixed(0)}
+                            </span>
+                            {p.stock === 0 && (
+                              <span className="text-xs text-rose-600 font-medium">Sold out</span>
+                            )}
                           </div>
                         </div>
-                      </motion.article>
+                      </motion.div>
                     );
                   })}
                 </div>
