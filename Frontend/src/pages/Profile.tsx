@@ -295,10 +295,10 @@ const Profile = () => {
               <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm">
                 <h3 className="text-xl font-medium text-gray-900 mb-6">Account Details</h3>
                 <div className="space-y-5 text-sm">
-                  <div>
+                  {/* <div>
                     <div className="text-gray-500">Member since</div>
                     <div className="text-gray-900 font-medium">March 2024</div>
-                  </div>
+                  </div> */}
                   <div>
                     <div className="text-gray-500">Role</div>
                     <div className="text-indigo-600 font-medium uppercase tracking-wide">{user.role}</div>
