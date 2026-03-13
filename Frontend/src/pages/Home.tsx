@@ -1,10 +1,10 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import createApiInstance from "../utils/api";
 import { type Product } from "../types";
-import { useCart } from "../Context/useCart";
+// import { useCart } from "../Context/useCart";
 import { useAuth } from "../components/useAuth";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
@@ -23,7 +23,7 @@ const Home = () => {
   const [wishlistIds, setWishlistIds] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const { addToCart, isLoading: cartLoading } = useCart();
+  // const { addToCart, isLoading: cartLoading } = useCart();
   const { token } = useAuth();
   const navigate = useNavigate();
 
@@ -111,10 +111,10 @@ const Home = () => {
     }
   };
 
-  const handleAddToCart = async (id: number) => {
-    if (!token) return navigate("/login");
-    await addToCart(id, 1);
-  };
+  // const handleAddToCart = async (id: number) => {
+  //   if (!token) return navigate("/login");
+  //   await addToCart(id, 1);
+  // };
 
   const categories = ["all", "tops", "bottoms", "dresses", "outerwear", "sweaters", "shirts"];
 
@@ -272,7 +272,7 @@ const Home = () => {
                           </Link>
 
                           {/* Hover overlay */}
-                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4">
+                          {/* <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4">
                             <button
                               onClick={() => handleAddToCart(p.id)}
                               disabled={cartLoading || p.stock === 0}
@@ -286,7 +286,7 @@ const Home = () => {
                             >
                               <FaHeart className={`w-6 h-6 ${inWish ? "text-rose-600" : "text-gray-400"}`} />
                             </button>
-                          </div>
+                          </div> */}
 
                           {/* Wishlist button top-right */}
                           <button

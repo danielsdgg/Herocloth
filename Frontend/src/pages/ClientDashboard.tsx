@@ -114,7 +114,7 @@ const ClientDashboard: React.FC = () => {
       <Navbar />
 
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="flex flex-col lg:flex-row">
+        <div className="flex flex-col lg:flex-row mt-5">
           {/* Mobile Header with Menu Toggle */}
           <div className="lg:hidden bg-gradient-to-r from-black to-gray-900 text-white p-6 flex justify-between items-center shadow-lg">
             <h2 className="text-2xl font-extralight tracking-wide underline underline-offset-4">Client Dashboard</h2>
@@ -193,7 +193,7 @@ const ClientDashboard: React.FC = () => {
                 className="mb-12 text-center lg:text-left"
               >
                 <h1 className="text-4xl lg:text-5xl font-extralight text-gray-900 tracking-tight">
-                  Welcome back, {profile.firstname} {profile.lastname}!
+                  Welcome, {profile.firstname} {profile.lastname}!
                 </h1>
                 <p className="mt-3 text-lg text-gray-600">{profile.email}</p>
               </motion.div>
