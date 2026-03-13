@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
@@ -19,8 +19,8 @@ interface ProductWithRating extends Product {
 const Shop = () => {
   const [products, setProducts] = useState<ProductWithRating[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<ProductWithRating[]>([]);
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [sortOption, setSortOption] = useState<string>("featured");
+  const [categoryFilter] = useState<string>("all");
+  const [sortOption] = useState<string>("featured");
   const [wishlistIds, setWishlistIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -137,22 +137,22 @@ const Shop = () => {
     await addToCart(productId, 1);
   };
 
-  const categories = [
-    { value: "all", label: "All Pieces" },
-    { value: "tops", label: "Tops" },
-    { value: "bottoms", label: "Bottoms" },
-    { value: "dresses", label: "Dresses" },
-    { value: "outerwear", label: "Outerwear" },
-    { value: "sweaters", label: "Sweaters" },
-    { value: "shirts", label: "Shirts" },
-  ];
+//   const categories = [
+//     { value: "all", label: "All Pieces" },
+//     { value: "tops", label: "Tops" },
+//     { value: "bottoms", label: "Bottoms" },
+//     { value: "dresses", label: "Dresses" },
+//     { value: "outerwear", label: "Outerwear" },
+//     { value: "sweaters", label: "Sweaters" },
+//     { value: "shirts", label: "Shirts" },
+//   ];
 
-  const sortOptions = [
-    { value: "featured", label: "Featured" },
-    { value: "price-low", label: "Price: Low to High" },
-    { value: "price-high", label: "Price: High to Low" },
-    { value: "rating", label: "Top Rated" },
-  ];
+//   const sortOptions = [
+//     { value: "featured", label: "Featured" },
+//     { value: "price-low", label: "Price: Low to High" },
+//     { value: "price-high", label: "Price: High to Low" },
+//     { value: "rating", label: "Top Rated" },
+//   ];
 
   const renderStars = (rating: number) => (
     <div className="flex">
@@ -261,7 +261,7 @@ const Shop = () => {
               >
                 {[
                   "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=800",
-                  "https://images.unsplash.com/photo-1525507119028-ed4c6556d427?w=800",
+                  "https://images.unsplash.com/photo-1487222477894-8943e31ef7b2?w=800",
                   "https://images.unsplash.com/photo-1487222477894-8943e31ef7b2?w=800",
                   "https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=800",
                 ].map((src, i) => (
@@ -286,7 +286,7 @@ const Shop = () => {
                 Our Ready-to-Wear Collection
               </h2>
 
-              <div className="flex flex-col sm:flex-row gap-4">
+              {/* <div className="flex flex-col sm:flex-row gap-4">
                 <select
                   value={categoryFilter}
                   onChange={e => setCategoryFilter(e.target.value)}
@@ -310,7 +310,7 @@ const Shop = () => {
                     </option>
                   ))}
                 </select>
-              </div>
+              </div> */}
             </div>
 
             {loading ? (
@@ -358,7 +358,7 @@ const Shop = () => {
                         </Link>
 
                         {/* Hover overlay */}
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4">
+                        {/* <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4">
                           <button
                             onClick={() => handleAddToCart(product.id)}
                             disabled={cartLoading || product.stock === 0}
@@ -375,7 +375,7 @@ const Shop = () => {
                               className={`w-6 h-6 ${isInWishlist ? "text-rose-600" : "text-gray-400"}`}
                             />
                           </button>
-                        </div>
+                        </div> */}
 
                         {/* Stock badge */}
                         {product.stock === 0 && (
