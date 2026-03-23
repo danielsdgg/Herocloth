@@ -14,7 +14,11 @@ review_bp = Blueprint('review', __name__)
 # POST /review/ - Create a new review (authenticated user only)
 @review_bp.route('/', methods=['POST'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def create_review():
     current_user_id = get_jwt_identity()
     user = db.session.get(User, current_user_id)
@@ -63,7 +67,11 @@ def create_review():
 # GET /review/my-reviews - Get all reviews written by the current user
 @review_bp.route('/my-reviews', methods=['GET'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def get_my_reviews():
     current_user_id = get_jwt_identity()
 
@@ -96,7 +104,11 @@ def get_my_reviews():
 # PUT /review/<int:review_id> - Edit own review (only owner can edit)
 @review_bp.route('/<int:review_id>', methods=['PUT'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def update_review(review_id):
     current_user_id = get_jwt_identity()
     review = db.session.get(Review, review_id)
@@ -132,7 +144,11 @@ def update_review(review_id):
 # DELETE /review/<int:review_id> - Delete review (admin only)
 @review_bp.route('/<int:review_id>', methods=['DELETE'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def delete_review(review_id):
     current_user_id = get_jwt_identity()
     current_user = db.session.get(User, current_user_id)
@@ -157,7 +173,11 @@ def delete_review(review_id):
 
 # GET /review/product/<int:product_id>/reviews - Get all reviews for a product (public)
 @review_bp.route('/product/<int:product_id>/reviews', methods=['GET'])
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def get_product_reviews(product_id):
     product = db.session.get(Product, product_id)
     if not product:
@@ -194,7 +214,11 @@ def get_product_reviews(product_id):
 
 # GET /review/product/<int:product_id>/rating-summary - Average rating + count (public)
 @review_bp.route('/product/<int:product_id>/rating-summary', methods=['GET'])
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def get_rating_summary(product_id):
     product = db.session.get(Product, product_id)
     if not product:
@@ -225,7 +249,11 @@ def get_rating_summary(product_id):
 # GET /review/all - Get ALL reviews (admin only)
 @review_bp.route('/all', methods=['GET'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def get_all_reviews():
     current_user_id = get_jwt_identity()
     current_user = db.session.get(User, current_user_id)

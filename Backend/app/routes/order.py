@@ -12,7 +12,11 @@ order_bp = Blueprint('order', __name__)
 
 @order_bp.route('/create', methods=['POST'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def create_order():
     current_user_id = get_jwt_identity()
     user = db.session.get(User, current_user_id)
@@ -117,7 +121,11 @@ def create_order():
 
 @order_bp.route('/my-orders', methods=['GET'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def get_my_orders():
     current_user_id = get_jwt_identity()
     orders = Order.query.filter_by(user_id=current_user_id).order_by(Order.created_at.desc()).all()
@@ -137,7 +145,11 @@ def get_my_orders():
 
 @order_bp.route('/<int:id>', methods=['GET'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def get_order(id):
     current_user_id = get_jwt_identity()
     order = db.session.get(Order, id)
@@ -164,7 +176,11 @@ def get_order(id):
 
 @order_bp.route('/all', methods=['GET'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def get_all_orders():
     current_user_id = get_jwt_identity()
     admin = db.session.get(User, current_user_id)
@@ -185,7 +201,11 @@ def get_all_orders():
 
 @order_bp.route('/<int:id>/update-status', methods=['PATCH'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def update_order_status(id):
     current_user_id = get_jwt_identity()
     admin = db.session.get(User, current_user_id)
