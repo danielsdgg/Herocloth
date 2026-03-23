@@ -37,7 +37,7 @@ interface Review {
 }
 
 const ClientDashboard: React.FC = () => {
-  const { token, role, clearAuth } = useAuth();
+  const { token, role } = useAuth();
   const navigate = useNavigate();
   const api = useMemo(() => createApiInstance(token), [token]);
 

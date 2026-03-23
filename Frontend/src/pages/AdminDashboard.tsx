@@ -369,7 +369,7 @@ const AdminDashboard = () => {
     { id: "orders", label: "Orders", icon: ShoppingCart, accent: "rose" },
   ] as const;
 
-  type TabId = typeof tabs[number]["id"];
+  // type TabId = typeof tabs[number]["id"];
 
   const getAccent = (accent: string) => ({
     bg: `bg-${accent}-50`,
@@ -400,7 +400,7 @@ const AdminDashboard = () => {
           <div className="flex flex-wrap gap-2 mb-10 border-b border-gray-200 pb-2 overflow-x-auto">
             {tabs.map(({ id, label, icon: Icon, accent }) => {
               const isActive = activeTab === id;
-              const { bg, border, text, hover } = getAccent(accent);
+              const { bg, border, text } = getAccent(accent);
               return (
                 <button
                   key={id}
