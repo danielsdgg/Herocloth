@@ -9,7 +9,7 @@ import { useCart } from "../Context/useCart";
 import { type Product } from "../types";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { FaStar, FaShoppingCart, FaHeart } from "react-icons/fa";
+import { FaStar, FaHeart } from "react-icons/fa";
 
 interface Review {
   id: number;

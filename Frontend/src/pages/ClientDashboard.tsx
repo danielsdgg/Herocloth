@@ -96,10 +96,10 @@ const ClientDashboard: React.FC = () => {
     fetchData();
   }, [token, role, navigate, api]);
 
-  const handleLogout = () => {
-    clearAuth();
-    navigate("/login");
-  };
+  // const handleLogout = () => {
+  //   clearAuth();
+  //   navigate("/login");
+  // };
 
   const getStatusBadge = (status: string) => {
     const colors: Record<string, string> = {

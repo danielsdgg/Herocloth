@@ -15,9 +15,9 @@ interface ContactFormData {
 }
 
 const Contact = () => {
-  const { token, username } = useAuth();
+  const { token, firstname } = useAuth();
   const [formData, setFormData] = useState<ContactFormData>({
-    name: username || "",
+    name: firstname || "",
     email: "",
     subject: "",
     message: "",
@@ -47,7 +47,7 @@ const Contact = () => {
     try {
       const api = createApiInstance(token);
       await api.post("/contact", formData, { withCredentials: true });
-      setFormData({ name: username || "", email: "", subject: "", message: "" });
+      setFormData({ name: firstname || "", email: "", subject: "", message: "" });
       toast.success("Message sent! We'll respond shortly.");
     } catch (error: unknown) {
       const message =
@@ -58,7 +58,7 @@ const Contact = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [formData, token, username, validateForm]);
+  }, [formData, token, firstname, validateForm]);
 
   return (
     <>

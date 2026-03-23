@@ -19,14 +19,13 @@ interface ProductWithRating extends Product {
 const Shop = () => {
   const [products, setProducts] = useState<ProductWithRating[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<ProductWithRating[]>([]);
-  const [wishlistIds, setWishlistIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
 
   const { addToCart, isLoading: cartLoading } = useCart();
   const { token } = useAuth();
   const navigate = useNavigate();
 
-  // Infer category from product name (unchanged)
+  // Infer category from product name
   const inferCategory = (name: string): string => {
     const n = name.toLowerCase();
     if (n.includes("jeans") || n.includes("pants") || n.includes("trousers")) return "bottoms";
@@ -66,12 +65,6 @@ const Shop = () => {
 
         setProducts(withRatings);
         setFilteredProducts(withRatings);
-
-        if (token) {
-          const wapi = createApiInstance(token);
-          const wishlistRes = await wapi.get("/wishlist/my-wishlist");
-          setWishlistIds(wishlistRes.data.map((item: any) => item.product_id));
-        }
       } catch {
         toast.error("Failed to load products");
       } finally {
@@ -80,32 +73,7 @@ const Shop = () => {
     };
 
     fetchProducts();
-  }, [token]);
-
-  const toggleWishlist = async (productId: number) => {
-    if (!token) {
-      toast.info("Please log in to use wishlist");
-      navigate("/login");
-      return;
-    }
-
-    const api = createApiInstance(token);
-    const isInWishlist = wishlistIds.includes(productId);
-
-    try {
-      if (isInWishlist) {
-        await api.delete(`/wishlist/remove/${productId}`);
-        setWishlistIds((prev) => prev.filter((id) => id !== productId));
-        toast.success("Removed from wishlist");
-      } else {
-        await api.post("/wishlist/add", { product_id: productId });
-        setWishlistIds((prev) => [...prev, productId]);
-        toast.success("Added to wishlist");
-      }
-    } catch (err: any) {
-      toast.error(err.response?.data?.msg || "Failed to update wishlist");
-    }
-  };
+  }, []);
 
   const handleAddToCart = async (productId: number) => {
     if (!token) {
@@ -270,73 +238,69 @@ const Shop = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
-                {filteredProducts.map((product, index) => {
-                  const isInWishlist = wishlistIds.includes(product.id);
+                {filteredProducts.map((product, index) => (
+                  <motion.div
+                    key={product.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: index * 0.08 }}
+                    className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col"
+                  >
+                    {/* Image */}
+                    <div className="relative aspect-[3/4] overflow-hidden">
+                      <Link to={`/product/${product.id}`} className="block h-full">
+                        <img
+                          src={product.image1 || "https://via.placeholder.com/480x640?text=Product"}
+                          alt={product.name}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          loading="lazy"
+                        />
+                      </Link>
 
-                  return (
-                    <motion.div
-                      key={product.id}
-                      initial={{ opacity: 0, y: 30 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.6, delay: index * 0.08 }}
-                      className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col"
-                    >
-                      {/* Image */}
-                      <div className="relative aspect-[3/4] overflow-hidden">
-                        <Link to={`/product/${product.id}`} className="block h-full">
-                          <img
-                            src={product.image1 || "https://via.placeholder.com/480x640?text=Product"}
-                            alt={product.name}
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                            loading="lazy"
-                          />
-                        </Link>
+                      {/* Stock badge */}
+                      {product.stock === 0 && (
+                        <div className="absolute top-4 left-4 bg-rose-600 text-white text-xs font-medium px-3 py-1 rounded-full">
+                          Sold Out
+                        </div>
+                      )}
+                    </div>
 
-                        {/* Stock badge */}
-                        {product.stock === 0 && (
-                          <div className="absolute top-4 left-4 bg-rose-600 text-white text-xs font-medium px-3 py-1 rounded-full">
-                            Sold Out
-                          </div>
+                    {/* Info */}
+                    <div className="p-5 flex flex-col flex-grow">
+                      <Link to={`/product/${product.id}`}>
+                        <h3 className="text-base font-medium text-gray-900 mb-1 line-clamp-2 group-hover:text-indigo-700 transition-colors">
+                          {product.name}
+                        </h3>
+                      </Link>
+
+                      <div className="flex items-center gap-2 mb-3">
+                        {renderStars(product.average_rating)}
+                        {product.review_count > 0 && (
+                          <span className="text-xs text-gray-500">
+                            ({product.review_count})
+                          </span>
                         )}
                       </div>
 
-                      {/* Info */}
-                      <div className="p-5 flex flex-col flex-grow">
-                        <Link to={`/product/${product.id}`}>
-                          <h3 className="text-base font-medium text-gray-900 mb-1 line-clamp-2 group-hover:text-indigo-700 transition-colors">
-                            {product.name}
-                          </h3>
-                        </Link>
+                      <div className="mt-auto">
+                        <p className="text-xl font-semibold text-gray-900">
+                          KSh {product.price.toFixed(0)}
+                        </p>
 
-                        <div className="flex items-center gap-2 mb-3">
-                          {renderStars(product.average_rating)}
-                          {product.review_count > 0 && (
-                            <span className="text-xs text-gray-500">
-                              ({product.review_count})
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="mt-auto">
-                          <p className="text-xl font-semibold text-gray-900">
-                            KSh {product.price.toFixed(0)}
-                          </p>
-
-                          <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => handleAddToCart(product.id)}
-                            disabled={cartLoading || product.stock === 0}
-                            className="mt-4 w-full py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition disabled:opacity-50 font-medium shadow-sm hover:shadow"
-                          >
-                            Add to Cart
-                          </motion.button>
-                        </div>
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => handleAddToCart(product.id)}
+                          disabled={cartLoading || product.stock === 0}
+                          className="mt-4 w-full py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition disabled:opacity-50 font-medium shadow-sm hover:shadow"
+                        >
+                          Add to Cart
+                        </motion.button>
                       </div>
-                    </motion.div>
-                  );
-                })}
+                    </div>
+                  </motion.div>
+                ))}
               </div>
             )}
           </div>

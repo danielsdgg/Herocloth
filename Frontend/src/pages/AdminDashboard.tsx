@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Users, Package, PlusCircle, Star, Heart, Mail, ShoppingCart,
   Search, Edit, Trash2, Loader2,
-  UserCircle, ShieldCheck, Clock, DollarSign, Tag, Calendar,
+  UserCircle, ShieldCheck, Clock, Tag, Calendar,
   MessageSquare, Star as StarIcon, X,
 } from "lucide-react";
 
