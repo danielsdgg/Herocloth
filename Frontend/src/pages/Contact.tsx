@@ -209,10 +209,10 @@ const Contact = () => {
                     title: "Call Us",
                     content: (
                       <a
-                        href="tel:+1234567890"
+                        href="tel:+254707319080"
                         className="text-indigo-600 hover:underline font-medium"
                       >
-                        +1 (234) 567-890
+                        +254 707 319 080
                       </a>
                     ),
                     desc: "Mon–Fri, 9AM–6PM EAT",

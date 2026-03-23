@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
@@ -8,7 +8,7 @@ import { useCart } from "../Context/useCart";
 import { useAuth } from "../components/useAuth";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { FaHeart, FaShoppingCart } from "react-icons/fa";
+import { FaHeart } from "react-icons/fa";
 
 interface ProductWithRating extends Product {
   average_rating: number;
@@ -259,7 +259,7 @@ const Home = () => {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.6, delay: idx * 0.08 }}
-                        className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 border border-gray-100"
+                        className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 border border-gray-100 flex flex-col"
                       >
                         <div className="relative aspect-[3/4] overflow-hidden">
                           <Link to={`/product/${p.id}`}>
@@ -271,33 +271,22 @@ const Home = () => {
                             />
                           </Link>
 
-                          {/* Hover overlay */}
-                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4">
-                            <button
-                              onClick={() => handleAddToCart(p.id)}
-                              disabled={cartLoading || p.stock === 0}
-                              className="p-4 bg-white rounded-full hover:bg-gray-100 transition transform hover:scale-110 disabled:opacity-50"
-                            >
-                              <FaShoppingCart className="w-6 h-6 text-gray-900" />
-                            </button>
-                            <button
-                              onClick={() => toggleWishlist(p.id)}
-                              className="p-4 bg-white rounded-full hover:bg-gray-100 transition transform hover:scale-110"
-                            >
-                              <FaHeart className={`w-6 h-6 ${inWish ? "text-rose-600" : "text-gray-400"}`} />
-                            </button>
-                          </div>
-
-                          {/* Wishlist button top-right */}
+                          {/* Wishlist button always visible top-right */}
                           <button
                             onClick={() => toggleWishlist(p.id)}
                             className="absolute top-4 right-4 z-10 p-3 rounded-full bg-white/90 backdrop-blur-sm shadow hover:bg-white transition"
                           >
                             <FaHeart className={`w-5 h-5 ${inWish ? "text-rose-600" : "text-gray-400"}`} />
                           </button>
+
+                          {p.stock === 0 && (
+                            <div className="absolute top-4 left-4 bg-rose-600 text-white text-xs font-medium px-3 py-1 rounded-full">
+                              Sold Out
+                            </div>
+                          )}
                         </div>
 
-                        <div className="p-5">
+                        <div className="p-5 flex flex-col flex-grow">
                           <Link to={`/product/${p.id}`}>
                             <h3 className="text-base font-medium text-gray-900 mb-1 line-clamp-2 group-hover:text-indigo-700 transition-colors">
                               {p.name}
@@ -311,13 +300,27 @@ const Home = () => {
                             )}
                           </div>
 
-                          <div className="flex items-baseline gap-2">
-                            <span className="text-xl font-semibold text-gray-900">
-                              KSh {p.price.toFixed(0)}
-                            </span>
-                            {p.stock === 0 && (
-                              <span className="text-xs text-rose-600 font-medium">Sold out</span>
-                            )}
+                          <div className="mt-auto">
+                            <div className="flex items-baseline gap-2 mb-4">
+                              <span className="text-xl font-semibold text-gray-900">
+                                KSh {p.price.toFixed(0)}
+                              </span>
+                              {p.stock === 0 && (
+                                <span className="text-xs text-rose-600 font-medium">Sold out</span>
+                              )}
+                            </div>
+
+                            <button
+                              onClick={() => handleAddToCart(p.id)}
+                              disabled={cartLoading || p.stock === 0}
+                              className={`w-full py-3 rounded-xl font-medium transition shadow-sm hover:shadow ${
+                                p.stock === 0
+                                  ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                                  : "bg-gray-900 text-white hover:bg-gray-800"
+                              }`}
+                            >
+                              {p.stock === 0 ? "Sold Out" : "Add to Cart"}
+                            </button>
                           </div>
                         </div>
                       </motion.div>

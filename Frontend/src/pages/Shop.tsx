@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
-import { FaHeart, FaShoppingCart, FaEdit, FaArrowRight } from "react-icons/fa";
+import { FaShoppingCart, FaEdit, FaArrowRight } from "react-icons/fa";
 
 import createApiInstance from "../utils/api";
 import { type Product } from "../types";
@@ -19,8 +19,6 @@ interface ProductWithRating extends Product {
 const Shop = () => {
   const [products, setProducts] = useState<ProductWithRating[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<ProductWithRating[]>([]);
-  const [categoryFilter] = useState<string>("all");
-  const [sortOption] = useState<string>("featured");
   const [wishlistIds, setWishlistIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,7 +26,7 @@ const Shop = () => {
   const { token } = useAuth();
   const navigate = useNavigate();
 
-  // Infer category from product name 
+  // Infer category from product name (unchanged)
   const inferCategory = (name: string): string => {
     const n = name.toLowerCase();
     if (n.includes("jeans") || n.includes("pants") || n.includes("trousers")) return "bottoms";
@@ -45,14 +43,14 @@ const Shop = () => {
       try {
         const api = createApiInstance(null);
         const res = await api.get<Product[]>("/product/");
-        
-        const withCategories = res.data.map(p => ({
+
+        const withCategories = res.data.map((p) => ({
           ...p,
           category: inferCategory(p.name),
         }));
 
         const withRatings = await Promise.all(
-          withCategories.map(async p => {
+          withCategories.map(async (p) => {
             try {
               const ratingRes = await api.get(`/review/product/${p.id}/rating-summary`);
               return {
@@ -74,7 +72,7 @@ const Shop = () => {
           const wishlistRes = await wapi.get("/wishlist/my-wishlist");
           setWishlistIds(wishlistRes.data.map((item: any) => item.product_id));
         }
-      } catch (err) {
+      } catch {
         toast.error("Failed to load products");
       } finally {
         setLoading(false);
@@ -83,25 +81,6 @@ const Shop = () => {
 
     fetchProducts();
   }, [token]);
-
-  // Apply filters & sorting
-  useEffect(() => {
-    let result = [...products];
-
-    if (categoryFilter !== "all") {
-      result = result.filter(p => p.category === categoryFilter);
-    }
-
-    if (sortOption === "price-low") {
-      result.sort((a, b) => a.price - b.price);
-    } else if (sortOption === "price-high") {
-      result.sort((a, b) => b.price - a.price);
-    } else if (sortOption === "rating") {
-      result.sort((a, b) => b.average_rating - a.average_rating);
-    }
-
-    setFilteredProducts(result);
-  }, [products, categoryFilter, sortOption]);
 
   const toggleWishlist = async (productId: number) => {
     if (!token) {
@@ -116,11 +95,11 @@ const Shop = () => {
     try {
       if (isInWishlist) {
         await api.delete(`/wishlist/remove/${productId}`);
-        setWishlistIds(prev => prev.filter(id => id !== productId));
+        setWishlistIds((prev) => prev.filter((id) => id !== productId));
         toast.success("Removed from wishlist");
       } else {
         await api.post("/wishlist/add", { product_id: productId });
-        setWishlistIds(prev => [...prev, productId]);
+        setWishlistIds((prev) => [...prev, productId]);
         toast.success("Added to wishlist");
       }
     } catch (err: any) {
@@ -136,23 +115,6 @@ const Shop = () => {
     }
     await addToCart(productId, 1);
   };
-
-//   const categories = [
-//     { value: "all", label: "All Pieces" },
-//     { value: "tops", label: "Tops" },
-//     { value: "bottoms", label: "Bottoms" },
-//     { value: "dresses", label: "Dresses" },
-//     { value: "outerwear", label: "Outerwear" },
-//     { value: "sweaters", label: "Sweaters" },
-//     { value: "shirts", label: "Shirts" },
-//   ];
-
-//   const sortOptions = [
-//     { value: "featured", label: "Featured" },
-//     { value: "price-low", label: "Price: Low to High" },
-//     { value: "price-high", label: "Price: High to Low" },
-//     { value: "rating", label: "Top Rated" },
-//   ];
 
   const renderStars = (rating: number) => (
     <div className="flex">
@@ -200,13 +162,13 @@ const Shop = () => {
               transition={{ duration: 0.9, delay: 0.4 }}
               className="flex flex-col sm:flex-row gap-5 justify-center"
             >
-              <Link
-                to="#products"
+              <a
+                href="#products"
                 className="inline-flex items-center px-10 py-4 bg-indigo-600 text-white font-medium rounded-full hover:bg-indigo-700 transition shadow-lg shadow-indigo-200/30"
               >
                 Shop Ready-to-Wear
                 <FaShoppingCart className="ml-3 w-5 h-5" />
-              </Link>
+              </a>
 
               <Link
                 to="/contact"
@@ -285,32 +247,6 @@ const Shop = () => {
               <h2 className="text-3xl sm:text-4xl font-light text-gray-900">
                 Our Ready-to-Wear Collection
               </h2>
-
-              {/* <div className="flex flex-col sm:flex-row gap-4">
-                <select
-                  value={categoryFilter}
-                  onChange={e => setCategoryFilter(e.target.value)}
-                  className="px-5 py-3 border border-gray-300 rounded-xl text-gray-700 focus:outline-none focus:border-indigo-400 min-w-[180px]"
-                >
-                  {categories.map(cat => (
-                    <option key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  value={sortOption}
-                  onChange={e => setSortOption(e.target.value)}
-                  className="px-5 py-3 border border-gray-300 rounded-xl text-gray-700 focus:outline-none focus:border-indigo-400 min-w-[180px]"
-                >
-                  {sortOptions.map(opt => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div> */}
             </div>
 
             {loading ? (
@@ -346,7 +282,7 @@ const Shop = () => {
                       transition={{ duration: 0.6, delay: index * 0.08 }}
                       className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col"
                     >
-                      {/* Image + overlay actions */}
+                      {/* Image */}
                       <div className="relative aspect-[3/4] overflow-hidden">
                         <Link to={`/product/${product.id}`} className="block h-full">
                           <img
@@ -356,26 +292,6 @@ const Shop = () => {
                             loading="lazy"
                           />
                         </Link>
-
-                        {/* Hover overlay */}
-                        {/* <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4">
-                          <button
-                            onClick={() => handleAddToCart(product.id)}
-                            disabled={cartLoading || product.stock === 0}
-                            className="p-4 bg-white rounded-full hover:bg-gray-100 transition transform hover:scale-110 disabled:opacity-50"
-                          >
-                            <FaShoppingCart className="w-6 h-6 text-gray-900" />
-                          </button>
-
-                          <button
-                            onClick={() => toggleWishlist(product.id)}
-                            className="p-4 bg-white rounded-full hover:bg-gray-100 transition transform hover:scale-110"
-                          >
-                            <FaHeart
-                              className={`w-6 h-6 ${isInWishlist ? "text-rose-600" : "text-gray-400"}`}
-                            />
-                          </button>
-                        </div> */}
 
                         {/* Stock badge */}
                         {product.stock === 0 && (

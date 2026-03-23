@@ -6,7 +6,18 @@ import createApiInstance from "../utils/api";
 import { useAuth } from "../components/useAuth";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { FaHome, FaShoppingBag, FaCreditCard, FaHeart, FaSignOutAlt, FaBars, FaTimes, FaStar, FaQuestionCircle, FaHeadset, FaUserCircle, FaCalendarAlt, FaDollarSign, FaTruck, FaCommentDots } from "react-icons/fa";
+import {
+  FaHome,
+  FaShoppingBag,
+  FaCreditCard,
+  FaStar,
+  FaHeart,
+  FaHeadset,
+  FaTruck,
+  FaDollarSign,
+  FaCalendarAlt,
+  FaCommentDots,
+} from "react-icons/fa";
 
 interface Order {
   id: number;
@@ -30,13 +41,19 @@ const ClientDashboard: React.FC = () => {
   const navigate = useNavigate();
   const api = useMemo(() => createApiInstance(token), [token]);
 
-  const [activeTab, setActiveTab] = useState<"overview" | "orders" | "payments" | "reviews" | "wishlist" | "support">("overview");
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "orders" | "payments" | "reviews" | "wishlist" | "support"
+  >("overview");
   const [orders, setOrders] = useState<Order[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [profile, setProfile] = useState<{ firstname: string; lastname: string; email: string; phone?: string } | null>(null);
+  const [profile, setProfile] = useState<{
+    firstname: string;
+    lastname: string;
+    email: string;
+    phone?: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -64,7 +81,7 @@ const ClientDashboard: React.FC = () => {
         const ordersRes = await api.get("/order/my-orders");
         setOrders(ordersRes.data);
 
-        // Reviews (for Reviews tab + Overview count)
+        // Reviews
         const reviewsRes = await api.get("/review/my-reviews");
         setReviews(reviewsRes.data);
       } catch (err: any) {
@@ -86,384 +103,417 @@ const ClientDashboard: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     const colors: Record<string, string> = {
-      pending: "bg-yellow-500/10 text-yellow-600 ring-yellow-500/20",
-      paid: "bg-green-500/10 text-green-600 ring-green-500/20",
-      cod: "bg-blue-500/10 text-blue-600 ring-blue-500/20",
-      shipped: "bg-purple-500/10 text-purple-600 ring-purple-500/20",
-      delivered: "bg-emerald-500/10 text-emerald-600 ring-emerald-500/20",
-      cancelled: "bg-red-500/10 text-red-600 ring-red-500/20",
+      pending: "bg-yellow-100 text-yellow-800",
+      paid: "bg-green-100 text-green-800",
+      cod: "bg-blue-100 text-blue-800",
+      shipped: "bg-purple-100 text-purple-800",
+      delivered: "bg-emerald-100 text-emerald-800",
+      cancelled: "bg-red-100 text-red-800",
     };
     return (
-      <span className={`px-4 py-2 rounded-full text-sm font-medium ring-1 ring-inset ${colors[status] || "bg-gray-500/10 text-gray-600 ring-gray-500/20"}`}>
+      <span
+        className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${colors[status] || "bg-gray-100 text-gray-800"}`}
+      >
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     );
   };
 
-  const navItems = [
+  const tabs = [
     { id: "overview", label: "Overview", icon: <FaHome /> },
-    { id: "orders", label: "My Orders", icon: <FaShoppingBag /> },
+    { id: "orders", label: "Orders", icon: <FaShoppingBag /> },
     { id: "payments", label: "Payments", icon: <FaCreditCard /> },
     { id: "reviews", label: "Reviews", icon: <FaStar /> },
     { id: "wishlist", label: "Wishlist", icon: <FaHeart /> },
-    { id: "support", label: "Help & Support", icon: <FaQuestionCircle /> },
+    { id: "support", label: "Support", icon: <FaHeadset /> },
   ];
 
   return (
     <>
       <Navbar />
 
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="flex flex-col lg:flex-row mt-5">
-          {/* Mobile Header with Menu Toggle */}
-          <div className="lg:hidden bg-gradient-to-r from-black to-gray-900 text-white p-6 flex justify-between items-center shadow-lg">
-            <h2 className="text-2xl font-extralight tracking-wide underline underline-offset-4">Client Dashboard</h2>
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 rounded-full hover:bg-white/10 transition">
-              {mobileMenuOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
-            </button>
-          </div>
-
-          {/* Side Navigation */}
-          <motion.aside
-            initial={{ x: -300 }}
-            animate={{ x: mobileMenuOpen || window.innerWidth >= 1024 ? 0 : -300 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className={`lg:w-72 bg-gradient-to-b from-black to-gray-900 text-white h-screen lg:h-auto lg:sticky lg:top-0 overflow-y-auto lg:block fixed lg:relative z-50 shadow-2xl lg:shadow-none transform ${
-              mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-            } lg:translate-x-0`}
+      <div className="min-h-screen mt-8 bg-gray-50">
+        {/* Welcome Header */}
+        {profile && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="bg-white border-b border-gray-200 py-10 md:py-14"
           >
-            <div className="p-8">
-              <div className="hidden lg:block mb-12">
-                <h2 className="text-3xl font-extralight tracking-wider underline underline-offset-8">Client Dashboard</h2>
-              </div>
-
-              {/* Profile Section in Sidebar */}
-              {profile && (
-                <div className="flex flex-col items-center mb-12 border-b border-white/10 pb-8">
-                  <FaUserCircle className="text-6xl text-white/60 mb-4" />
-                  <h3 className="text-xl font-light text-white">
-                    {profile.firstname} {profile.lastname}
-                  </h3>
-                  <p className="text-sm text-white/70 mt-1">{profile.email}</p>
+            <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 text-center">
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center text-indigo-600 text-4xl font-medium shadow-md">
+                  {profile.firstname[0]}
+                  {profile.lastname[0]}
                 </div>
-              )}
-
-              <nav className="space-y-3">
-                {navItems.map((item) => (
-                  <motion.button
-                    key={item.id}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => {
-                      setActiveTab(item.id as any);
-                      setMobileMenuOpen(false);
-                    }}
-                    className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all text-left ${
-                      activeTab === item.id
-                        ? "bg-white/10 text-white font-medium shadow-md"
-                        : "text-white/70 hover:bg-white/5 hover:text-white"
-                    }`}
-                  >
-                    <span className="text-2xl">{item.icon}</span>
-                    <span className="text-lg font-light tracking-wide">{item.label}</span>
-                  </motion.button>
-                ))}
-
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-red-400 hover:bg-red-500/10 transition-all text-left mt-12"
-                >
-                  <FaSignOutAlt className="text-2xl" />
-                  <span className="text-lg font-light tracking-wide">Logout</span>
-                </motion.button>
-              </nav>
-            </div>
-          </motion.aside>
-
-          {/* Main Content */}
-          <main className="flex-1 p-8 lg:p-12">
-            {/* Welcome Message - Visible on ALL screens */}
-            {profile && (
-              <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="mb-12 text-center lg:text-left"
-              >
-                <h1 className="text-4xl lg:text-5xl font-extralight text-gray-900 tracking-tight">
-                  Welcome, {profile.firstname} {profile.lastname}!
-                </h1>
-                <p className="mt-3 text-lg text-gray-600">{profile.email}</p>
-              </motion.div>
-            )}
-
-            {loading ? (
-              <div className="flex justify-center items-center h-96">
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  className="rounded-full h-16 w-16 border-t-4 border-b-4 border-black"
-                ></motion.div>
+                <div>
+                  <h1 className="text-3xl md:text-4xl font-light text-gray-900 mb-2">
+                    Welcome back, {profile.firstname} {profile.lastname}
+                  </h1>
+                  <p className="text-gray-600">{profile.email}</p>
+                </div>
               </div>
-            ) : error ? (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="bg-red-50 border border-red-200 text-red-700 px-8 py-6 rounded-2xl shadow-md"
-              >
-                {error}
-              </motion.div>
-            ) : (
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeTab}
-                  initial={{ opacity: 0, x: 50 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -50 }}
-                  transition={{ duration: 0.4, ease: "easeOut" }}
-                  className="space-y-12"
+            </div>
+          </motion.div>
+        )}
+
+        {/* Tabs Navigation (Horizontal on desktop, scrollable) */}
+        <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex overflow-x-auto py-4 gap-2 no-scrollbar">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm md:text-base font-medium transition-all whitespace-nowrap ${
+                    activeTab === tab.id
+                      ? "bg-indigo-600 text-white shadow-md"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
                 >
-                  {/* Overview */}
-                  {activeTab === "overview" && (
-                    <div className="space-y-12">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                        {[
-                          { title: "Total Orders", value: orders.length, color: "text-black", icon: <FaShoppingBag className="text-4xl text-gray-700" /> },
-                          { title: "Pending", value: orders.filter(o => o.status === "pending").length, color: "text-yellow-600", icon: <FaCalendarAlt className="text-4xl text-yellow-600" /> },
-                          { title: "Delivered", value: orders.filter(o => o.status === "delivered").length, color: "text-emerald-600", icon: <FaTruck className="text-4xl text-emerald-600" /> },
-                          { title: "Total Reviews", value: reviews.length, color: "text-purple-600", icon: <FaStar className="text-4xl text-purple-600" /> },
-                        ].map((stat, index) => (
-                          <motion.div
-                            key={index}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.1 }}
-                            className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100 text-center hover:shadow-xl transition-shadow"
-                          >
-                            <div className="flex justify-center mb-4">{stat.icon}</div>
-                            <h3 className="text-xl font-medium text-gray-700 mb-3">{stat.title}</h3>
-                            <p className={`text-5xl font-extralight ${stat.color}`}>{stat.value}</p>
-                          </motion.div>
-                        ))}
-                      </div>
+                  <span className="text-lg md:text-xl">{tab.icon}</span>
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
 
-                      {/* Wishlist Preview (placeholder) */}
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4 }}
-                        className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow"
-                      >
-                        <h3 className="text-2xl font-light text-gray-800 mb-6 flex items-center gap-4">
-                          <FaHeart className="text-red-500 text-3xl" /> My Wishlist
-                        </h3>
-                        <p className="text-xl text-gray-600">
-                          You have <strong>0 items</strong> in your wishlist.
-                        </p>
-                        <p className="text-md text-gray-500 mt-4">
-                          Discover and save premium products tailored for you.
-                        </p>
-                      </motion.div>
+        {/* Main Content */}
+        <main className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 py-10 md:py-16">
+          {loading ? (
+            <div className="flex justify-center items-center h-96">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
+                className="rounded-full h-12 w-12 border-t-4 border-b-4 border-indigo-500"
+              />
+            </div>
+          ) : error ? (
+            <div className="bg-red-50 border border-red-200 text-red-700 p-8 rounded-2xl text-center shadow-sm">
+              {error}
+            </div>
+          ) : (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.4 }}
+                className="space-y-12"
+              >
+                {/* ── OVERVIEW ──────────────────────────────────────── */}
+                {activeTab === "overview" && (
+                  <div className="space-y-12">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                      {[
+                        {
+                          title: "Total Orders",
+                          value: orders.length,
+                          icon: <FaShoppingBag className="text-3xl text-indigo-600" />,
+                        },
+                        {
+                          title: "Pending",
+                          value: orders.filter((o) => o.status === "pending").length,
+                          icon: <FaCalendarAlt className="text-3xl text-yellow-600" />,
+                        },
+                        {
+                          title: "Delivered",
+                          value: orders.filter((o) => o.status === "delivered").length,
+                          icon: <FaTruck className="text-3xl text-emerald-600" />,
+                        },
+                        {
+                          title: "Reviews",
+                          value: reviews.length,
+                          icon: <FaStar className="text-3xl text-amber-600" />,
+                        },
+                      ].map((stat, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.1 }}
+                          className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-center hover:shadow-md transition-shadow"
+                        >
+                          <div className="mb-4 flex justify-center">{stat.icon}</div>
+                          <h3 className="text-lg font-medium text-gray-700 mb-2">{stat.title}</h3>
+                          <p className="text-4xl font-light text-gray-900">{stat.value}</p>
+                        </motion.div>
+                      ))}
                     </div>
-                  )}
 
-                  {/* My Orders */}
-                  {activeTab === "orders" && (
-                    <div className="space-y-12">
-                      <h2 className="text-3xl font-extralight text-gray-900 tracking-wide">My Orders</h2>
-
+                    {/* Recent Orders Preview */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
+                      <h3 className="text-2xl font-light text-gray-900 mb-6">Recent Orders</h3>
                       {orders.length === 0 ? (
-                        <div className="bg-white p-12 rounded-3xl shadow-lg text-center text-gray-600">
-                          You haven't placed any orders yet. Explore our collection!
-                        </div>
+                        <p className="text-gray-600 text-center py-12">
+                          You haven't placed any orders yet.
+                        </p>
                       ) : (
-                        <div className="bg-white rounded-3xl shadow-lg overflow-hidden border border-gray-100">
-                          <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                              <thead className="bg-gray-50/50">
-                                <tr>
-                                  <th className="px-8 py-5 text-left text-md font-medium text-gray-700">Date</th>
-                                  <th className="px-8 py-5 text-left text-md font-medium text-gray-700">Items</th>
-                                  <th className="px-8 py-5 text-left text-md font-medium text-gray-700">Total</th>
-                                  <th className="px-8 py-5 text-left text-md font-medium text-gray-700">Status</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-gray-200">
-                                {orders.map((order) => (
-                                  <motion.tr
-                                    key={order.id}
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    whileHover={{ backgroundColor: "#f9fafb" }}
-                                    className="transition-colors"
-                                  >
-                                    <td className="px-8 py-6 whitespace-nowrap text-md text-gray-600">
-                                      {new Date(order.created_at).toLocaleDateString()}
-                                    </td>
-                                    <td className="px-8 py-6 text-md text-gray-600">
-                                      {order.items.length} item{order.items.length !== 1 ? "s" : ""}
-                                    </td>
-                                    <td className="px-8 py-6 whitespace-nowrap text-md font-medium text-gray-900">
-                                      KSh {order.total.toFixed(2)}
-                                    </td>
-                                    <td className="px-8 py-6 whitespace-nowrap">
-                                      {getStatusBadge(order.status)}
-                                    </td>
-                                  </motion.tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Payments */}
-                  {activeTab === "payments" && (
-                    <div className="space-y-12">
-                      <h2 className="text-3xl font-extralight text-gray-900 tracking-wide">Payments & Transactions</h2>
-                      <div className="bg-white p-12 rounded-3xl shadow-lg text-center text-gray-600">
-                        <FaDollarSign className="text-6xl text-gray-400 mb-6 mx-auto" />
-                        <p className="text-xl">Your payment history and transaction details will appear here.</p>
-                        <p className="mt-6 text-md">Secure M-Pesa, card payments, and refunds integration coming soon.</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Reviews */}
-                  {activeTab === "reviews" && (
-                    <div className="space-y-12">
-                      <h2 className="text-3xl font-extralight text-gray-900 tracking-wide">My Reviews</h2>
-
-                      {reviews.length === 0 ? (
-                        <div className="bg-white p-12 rounded-3xl shadow-lg text-center text-gray-600">
-                          <FaCommentDots className="text-6xl text-gray-400 mb-6 mx-auto" />
-                          You haven't written any reviews yet.
-                          <p className="mt-6 text-md">Share your experiences with our premium products!</p>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                          {reviews.map((review, index) => (
-                            <motion.div
-                              key={review.id}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: index * 0.1 }}
-                              className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow"
+                        <div className="space-y-4">
+                          {orders.slice(0, 3).map((order) => (
+                            <div
+                              key={order.id}
+                              className="flex justify-between items-center py-4 border-b border-gray-100 last:border-0"
                             >
-                              <div className="flex items-center gap-3 mb-4">
-                                <div className="flex">
-                                  {[...Array(5)].map((_, i) => (
-                                    <FaStar
-                                      key={i}
-                                      className={`text-2xl ${i < review.rating ? "text-yellow-400" : "text-gray-300"}`}
-                                    />
-                                  ))}
-                                </div>
-                                <span className="text-md text-gray-500">
-                                  {new Date(review.created_at).toLocaleDateString()}
-                                </span>
+                              <div>
+                                <p className="font-medium text-gray-900">
+                                  Order #{order.id}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  {new Date(order.created_at).toLocaleDateString()}
+                                </p>
                               </div>
-                              <h4 className="font-medium text-xl text-gray-800 mb-4">{review.product_name}</h4>
-                              <p className="text-gray-600 leading-relaxed">{review.comment || "No comment provided."}</p>
-                            </motion.div>
+                              <div className="text-right">
+                                <p className="font-medium text-gray-900">
+                                  KSh {order.total.toFixed(2)}
+                                </p>
+                                {getStatusBadge(order.status)}
+                              </div>
+                            </div>
                           ))}
                         </div>
                       )}
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {/* Wishlist */}
-                  {activeTab === "wishlist" && (
-                    <div className="space-y-12">
-                      <h2 className="text-3xl font-extralight text-gray-900 tracking-wide">My Wishlist</h2>
-                      <div className="bg-white p-12 rounded-3xl shadow-lg text-center text-gray-600">
-                        <FaHeart className="text-6xl text-red-400 mb-6 mx-auto" />
-                        <p className="text-xl">Your wishlist is currently empty.</p>
-                        <p className="mt-6 text-md">Curate your collection of favorite high-end items!</p>
+                {/* ── ORDERS ────────────────────────────────────────── */}
+                {activeTab === "orders" && (
+                  <div className="space-y-8">
+                    <h2 className="text-3xl font-light text-gray-900">My Orders</h2>
+
+                    {orders.length === 0 ? (
+                      <div className="bg-white p-12 rounded-2xl shadow-sm text-center text-gray-600 border border-gray-100">
+                        <FaShoppingBag className="text-6xl text-gray-300 mx-auto mb-6" />
+                        <p className="text-xl">No orders yet</p>
+                        <p className="mt-4">Start shopping to see your orders here!</p>
                       </div>
-                    </div>
-                  )}
-
-                  {/* Help & Support */}
-                  {activeTab === "support" && (
-                    <div className="space-y-12">
-                      <h2 className="text-3xl font-extralight text-gray-900 tracking-wide">Help & Support</h2>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <motion.div
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          className="bg-white p-10 rounded-3xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow"
-                        >
-                          <h3 className="text-2xl font-light text-gray-800 mb-8 flex items-center gap-4">
-                            <FaHeadset className="text-3xl text-black" /> Get in Touch
-                          </h3>
-                          <div className="space-y-6 text-gray-700 text-lg">
-                            <p><strong>Email:</strong> support@herocloth.com</p>
-                            <p><strong>Phone:</strong> +254 700 000 000 (Mon–Sat, 8AM–8PM)</p>
-                            <p><strong>WhatsApp:</strong> +254 700 000 000</p>
-                          </div>
-                        </motion.div>
-
-                        <motion.div
-                          initial={{ opacity: 0, x: 20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          className="bg-white p-10 rounded-3xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow"
-                        >
-                          <h3 className="text-2xl font-light text-gray-800 mb-8">Frequently Asked Questions</h3>
-                          <div className="space-y-8 text-lg">
-                            <div>
-                              <p className="font-medium text-gray-800">How long does delivery take?</p>
-                              <p className="text-gray-600 mt-2">Within Nairobi: 1–3 days. Outside Nairobi: 3–7 days.</p>
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-800">What is your return policy?</p>
-                              <p className="text-gray-600 mt-2">Returns accepted within 7 days for unused items in original packaging.</p>
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-800">How do I track my order?</p>
-                              <p className="text-gray-600 mt-2">Check status in "My Orders" or contact support.</p>
-                            </div>
-                          </div>
-                        </motion.div>
-                      </div>
-
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-white p-10 rounded-3xl shadow-lg border border-gray-100 text-center hover:shadow-xl transition-shadow"
-                      >
-                        <p className="text-xl text-gray-700 mb-8">Need immediate help? We're here 24/7.</p>
-                        <div className="flex flex-col sm:flex-row justify-center gap-6">
-                          <motion.a
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            href="mailto:support@herocloth.com"
-                            className="bg-black text-white px-10 py-5 rounded-2xl hover:bg-gray-800 transition shadow-md"
-                          >
-                            Email Support
-                          </motion.a>
-                          <motion.a
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            href="tel:+254700000000"
-                            className="bg-gray-100 text-black px-10 py-5 rounded-2xl hover:bg-gray-200 transition shadow-md"
-                          >
-                            Call Us
-                          </motion.a>
+                    ) : (
+                      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Order ID</th>
+                                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Date</th>
+                                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Items</th>
+                                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Total</th>
+                                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Status</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200">
+                              {orders.map((order) => (
+                                <tr key={order.id} className="hover:bg-gray-50 transition-colors">
+                                  <td className="px-6 py-5 text-sm text-gray-900">#{order.id}</td>
+                                  <td className="px-6 py-5 text-sm text-gray-600">
+                                    {new Date(order.created_at).toLocaleDateString()}
+                                  </td>
+                                  <td className="px-6 py-5 text-sm text-gray-600">
+                                    {order.items.length} item{order.items.length !== 1 && "s"}
+                                  </td>
+                                  <td className="px-6 py-5 text-sm font-medium text-gray-900">
+                                    KSh {order.total.toFixed(2)}
+                                  </td>
+                                  <td className="px-6 py-5">{getStatusBadge(order.status)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
                         </div>
-                      </motion.div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ── PAYMENTS ──────────────────────────────────────── */}
+                {activeTab === "payments" && (
+                  <div className="space-y-8">
+                    <h2 className="text-3xl font-light text-gray-900">Payments & Transactions</h2>
+                    <div className="bg-white p-12 rounded-2xl shadow-sm text-center text-gray-600 border border-gray-100">
+                      <FaDollarSign className="text-7xl text-indigo-200 mx-auto mb-8" />
+                      <p className="text-xl font-medium mb-4">No transactions yet</p>
+                      <p className="text-gray-600">
+                        Your payment history will appear here once you make a purchase.
+                      </p>
+                      <p className="mt-6 text-sm text-gray-500">
+                        Secure payments via M-Pesa, card, and more coming soon.
+                      </p>
                     </div>
-                  )}
-                </motion.div>
-              </AnimatePresence>
-            )}
-          </main>
-        </div>
+                  </div>
+                )}
+
+                {/* ── REVIEWS ───────────────────────────────────────── */}
+                {activeTab === "reviews" && (
+                  <div className="space-y-8">
+                    <h2 className="text-3xl font-light text-gray-900">My Reviews</h2>
+
+                    {reviews.length === 0 ? (
+                      <div className="bg-white p-12 rounded-2xl shadow-sm text-center text-gray-600 border border-gray-100">
+                        <FaCommentDots className="text-7xl text-indigo-200 mx-auto mb-8" />
+                        <p className="text-xl font-medium mb-4">No reviews yet</p>
+                        <p className="text-gray-600">
+                          Share your thoughts on products you've purchased!
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {reviews.map((review, i) => (
+                          <motion.div
+                            key={review.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.1 }}
+                            className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+                          >
+                            <div className="flex items-center gap-3 mb-4">
+                              <div className="flex">
+                                {[...Array(5)].map((_, idx) => (
+                                  <FaStar
+                                    key={idx}
+                                    className={`text-xl ${
+                                      idx < review.rating ? "text-amber-500" : "text-gray-300"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-sm text-gray-500">
+                                {new Date(review.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <h4 className="font-medium text-lg text-gray-900 mb-2">
+                              {review.product_name}
+                            </h4>
+                            <p className="text-gray-700 leading-relaxed">
+                              {review.comment || "No comment added."}
+                            </p>
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ── WISHLIST ──────────────────────────────────────── */}
+                {activeTab === "wishlist" && (
+                  <div className="space-y-8">
+                    <h2 className="text-3xl font-light text-gray-900">My Wishlist</h2>
+                    <div className="bg-white p-12 rounded-2xl shadow-sm text-center text-gray-600 border border-gray-100">
+                      <FaHeart className="text-7xl text-rose-200 mx-auto mb-8" />
+                      <p className="text-xl font-medium mb-4">Your wishlist is empty</p>
+                      <p className="text-gray-600">
+                        Save items you love for later — they'll be waiting for you.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── SUPPORT ───────────────────────────────────────── */}
+                {activeTab === "support" && (
+                  <div className="space-y-12">
+                    <h2 className="text-3xl font-light text-gray-900">Help & Support</h2>
+
+                    <div className="grid md:grid-cols-2 gap-8">
+                      <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                        <h3 className="text-2xl font-medium text-gray-900 mb-6 flex items-center gap-4">
+                          <FaHeadset className="text-indigo-600 text-3xl" /> Contact Us
+                        </h3>
+                        <div className="space-y-5 text-gray-700">
+                          <p>
+                            <strong>Email:</strong>{" "}
+                            <a
+                              href="mailto:support@herocloth.com"
+                              className="text-indigo-600 hover:underline"
+                            >
+                              support@herocloth.com
+                            </a>
+                          </p>
+                          <p>
+                            <strong>Phone/WhatsApp:</strong>{" "}
+                            <a href="tel:+254707319080" className="text-indigo-600 hover:underline">
+                              +254 707 319 080
+                            </a>
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            Mon–Sat: 8AM – 8PM EAT
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                        <h3 className="text-2xl font-medium text-gray-900 mb-6">
+                          Frequently Asked Questions
+                        </h3>
+                        <div className="space-y-6 text-gray-700">
+                          <div>
+                            <p className="font-medium">How long does delivery take?</p>
+                            <p className="text-sm mt-1 text-gray-600">
+                              Nairobi: 1–3 days | Outside: 3–7 days
+                            </p>
+                          </div>
+                          <div>
+                            <p className="font-medium">What is your return policy?</p>
+                            <p className="text-sm mt-1 text-gray-600">
+                              7 days for unused items in original condition
+                            </p>
+                          </div>
+                          <div>
+                            <p className="font-medium">How do I track my order?</p>
+                            <p className="text-sm mt-1 text-gray-600">
+                              Check status in "My Orders" or contact support
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-10 rounded-2xl shadow-sm border border-gray-100 text-center">
+                      <p className="text-xl text-gray-700 mb-8">
+                        Need help right now? We're here for you.
+                      </p>
+                      <div className="flex flex-col sm:flex-row justify-center gap-6">
+                        <a
+                          href="mailto:support@herocloth.com"
+                          className="px-10 py-4 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition shadow-sm"
+                        >
+                          Email Support
+                        </a>
+                        <a
+                          href="tel:+254707319080"
+                          className="px-10 py-4 border border-gray-300 rounded-xl hover:bg-gray-50 transition"
+                        >
+                          Call Us
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          )}
+        </main>
+
+        {/* Bottom Navigation – Mobile only */}
+        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 lg:hidden z-50 shadow-lg">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="flex justify-around items-center h-16">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`flex flex-col items-center gap-1 py-2 px-3 text-xs font-medium transition-colors ${
+                    activeTab === tab.id ? "text-indigo-600" : "text-gray-600 hover:text-indigo-600"
+                  }`}
+                >
+                  <span className="text-xl">{tab.icon}</span>
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </nav>
       </div>
 
       <Footer />
