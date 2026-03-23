@@ -10,7 +10,11 @@ cart_bp = Blueprint('cart', __name__)
 
 @cart_bp.route('/', methods=['GET'])  
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def get_cart():
     current_user_id = int(get_jwt_identity())
     try:
@@ -37,7 +41,11 @@ def get_cart():
 
 @cart_bp.route('/add', methods=['POST'])  # Changed from '/cart/add'
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def add_to_cart():
     current_user_id = int(get_jwt_identity())
     data = request.get_json()
@@ -74,7 +82,11 @@ def add_to_cart():
 
 @cart_bp.route('/<int:cart_item_id>', methods=['PATCH'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def update_cart_item(cart_item_id):
     current_user_id = int(get_jwt_identity())
     data = request.get_json()
@@ -110,7 +122,11 @@ def update_cart_item(cart_item_id):
 
 @cart_bp.route('/<int:cart_item_id>', methods=['DELETE'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def delete_cart_item(cart_item_id):
     current_user_id = int(get_jwt_identity())
     cart_item = Cart.query.filter_by(id=cart_item_id, user_id=current_user_id).first()
@@ -130,7 +146,11 @@ def delete_cart_item(cart_item_id):
 
 @cart_bp.route('/', methods=['DELETE'])  # Changed from '/cart/'
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def clear_cart():
     current_user_id = int(get_jwt_identity())
     try:

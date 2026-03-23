@@ -12,7 +12,12 @@ logging.basicConfig(level=logging.INFO)
 auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/register', methods=['POST'])
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app" ],
+               supports_credentials=True)
 def register():
     data = request.get_json()
     firstname = data.get('firstname')
@@ -108,7 +113,11 @@ def login():
 
 @auth_bp.route('/refresh', methods=['POST'])
 @jwt_required(refresh=True)
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def refresh():
     current_user_id = get_jwt_identity()
     try:

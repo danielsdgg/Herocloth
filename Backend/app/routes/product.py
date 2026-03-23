@@ -9,7 +9,11 @@ product_bp = Blueprint('product', __name__)
 
 @product_bp.route('/', methods=['GET'])
 @product_bp.route('', methods=['GET'])
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def get_products():
     try:
         category = request.args.get('category')
@@ -34,7 +38,11 @@ def get_products():
 
 
 @product_bp.route('/<int:id>', methods=['GET'])
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def get_product(id):
     try:
         product = db.session.get(Product, id)
@@ -60,7 +68,11 @@ def get_product(id):
 @product_bp.route('/', methods=['POST'])
 @product_bp.route('', methods=['POST'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def create_product():
     current_user_id = get_jwt_identity()
     user = db.session.get(User, current_user_id)
@@ -117,7 +129,11 @@ def create_product():
 
 @product_bp.route('/<int:id>', methods=['PUT'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def update_product(id):
     current_user_id = get_jwt_identity()
     user = db.session.get(User, current_user_id)
@@ -175,7 +191,11 @@ def update_product(id):
 
 @product_bp.route('/<int:id>', methods=['DELETE'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def delete_product(id):
     current_user_id = get_jwt_identity()
     user = db.session.get(User, current_user_id)

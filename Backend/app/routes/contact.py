@@ -12,7 +12,11 @@ contact_bp = Blueprint('contact', __name__)
 # POST /contact - Submit contact form (public, optional auth, sends emails to both admin & user)
 @contact_bp.route('/contact', methods=['POST'])
 @jwt_required(optional=True)
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def submit_contact():
     data = request.get_json()
     name = data.get('name')
@@ -207,7 +211,11 @@ Received: {datetime.utcnow().strftime('%B %d, %Y')}
 # GET /contact/all - Get all submissions (admin only)
 @contact_bp.route('/contact/all', methods=['GET'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def get_all_contacts():
     current_user_id = get_jwt_identity()
     user = db.session.get(User, current_user_id)
@@ -236,7 +244,11 @@ def get_all_contacts():
 # GET /contact/<int:id> - Get single submission (admin or owner)
 @contact_bp.route('/contact/<int:id>', methods=['GET'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def get_contact(id):
     current_user_id = get_jwt_identity()
     user = db.session.get(User, current_user_id)
@@ -261,7 +273,11 @@ def get_contact(id):
 # PUT /contact/<int:id> - Update submission (admin only)
 @contact_bp.route('/contact/<int:id>', methods=['PUT'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def update_contact(id):
     current_user_id = get_jwt_identity()
     user = db.session.get(User, current_user_id)
@@ -290,7 +306,11 @@ def update_contact(id):
 # DELETE /contact/<int:id> - Delete submission (admin only)
 @contact_bp.route('/contact/<int:id>', methods=['DELETE'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def delete_contact(id):
     current_user_id = get_jwt_identity()
     user = db.session.get(User, current_user_id)
