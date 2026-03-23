@@ -13,58 +13,78 @@ load_dotenv()
 db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
-mail = Mail()  # ← Added Flask-Mail
+mail = Mail()  # ← Flask-Mail
 
 def create_app():
     app = Flask(__name__)
 
-    # Database config
+    # =======================
+    # CONFIG
+    # =======================
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
     app.config['JWT_SECRET_KEY'] = os.environ['SECRET_KEY']
 
-    # Flask-Mail configuration (Gmail example - use app password!)
+    # Flask-Mail config
     app.config['MAIL_SERVER'] = 'smtp.gmail.com'
     app.config['MAIL_PORT'] = 587
     app.config['MAIL_USE_TLS'] = True
-    app.config['MAIL_USERNAME'] = 'danieldeploys@gmail.com'  # Your receiving email
-    app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')  # Add to .env: MAIL_PASSWORD=your-app-password
+    app.config['MAIL_USERNAME'] = 'danieldeploys@gmail.com'
+    app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
     app.config['MAIL_DEFAULT_SENDER'] = 'danieldeploys@gmail.com'
 
-    # Initialize extensions
+    # =======================
+    # CORS FIX 
+    # =======================
     CORS(app, resources={
         r"/*": {
-            "origins": ["http://localhost:3000"],
+            "origins": [
+                "http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"
+            ],
             "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization"],
             "supports_credentials": True
         }
     })
 
+    # =======================
+    # INIT EXTENSIONS
+    # =======================
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
-    mail.init_app(app)  # ← Initialize Mail
+    mail.init_app(app)
 
-    # Handle OPTIONS for CORS preflight
+    # =======================
+    # ✅ FIXED PREFLIGHT HANDLER
+    # =======================
     @app.before_request
     def handle_options():
         if request.method == "OPTIONS":
+            origin = request.headers.get("Origin")
+
             response = jsonify({"msg": "CORS preflight successful"})
-            response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
+            response.headers.add("Access-Control-Allow-Origin", origin if origin else "*")
             response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
             response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
             response.headers.add("Access-Control-Allow-Credentials", "true")
             return response, 200
 
+    # =======================
+    # APP CONTEXT
+    # =======================
     with app.app_context():
         # Models
         from app.models.user import User
         from app.models.product import Product
         from app.models.cart import Cart
         from app.models.review import Review
-        from app.models.contact import Contact  # ← New: Contact model
+        from app.models.contact import Contact
 
         # Routes
         from app.routes.auth import auth_bp
@@ -75,7 +95,7 @@ def create_app():
         from app.routes.order import order_bp
         from app.routes.mpesa import mpesa_bp
         from app.routes.wishlist import wishlist_bp
-        from app.routes.contact import contact_bp  # ← New: Contact routes
+        from app.routes.contact import contact_bp
 
         # Register blueprints
         app.register_blueprint(auth_bp, url_prefix='/auth')
@@ -86,7 +106,7 @@ def create_app():
         app.register_blueprint(order_bp, url_prefix='/order')
         app.register_blueprint(mpesa_bp, url_prefix='/mpesa')
         app.register_blueprint(wishlist_bp, url_prefix='/wishlist')
-        app.register_blueprint(contact_bp)  # ← Register contact (no prefix needed)
+        app.register_blueprint(contact_bp)
 
         db.create_all()
         print("Registered blueprints:", [rule.endpoint for rule in app.url_map.iter_rules()])
