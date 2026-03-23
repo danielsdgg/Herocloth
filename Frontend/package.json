@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "proxy": "https://herocloth.onrender.com",
+  "proxy": "https://herocloth-1.onrender.com",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
