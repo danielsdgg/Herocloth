@@ -26,7 +26,7 @@ interface Review {
 }
 
 interface RatingSummary {
-  average_rating: number;
+  average_rating: number | null;
   review_count: number;
 }
 
@@ -35,7 +35,7 @@ const ProductDetails = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [ratingSummary, setRatingSummary] = useState<RatingSummary>({
-    average_rating: 0,
+    average_rating: null,
     review_count: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -75,9 +75,10 @@ const ProductDetails = () => {
     fetchProduct();
   }, [id, token]);
 
-  // Fetch reviews & summary
+  // Fetch reviews & rating summary
   useEffect(() => {
     if (!product) return;
+
     const fetchReviews = async () => {
       setReviewsLoading(true);
       try {
@@ -86,20 +87,25 @@ const ProductDetails = () => {
           api.get(`/review/product/${id}/reviews`),
           api.get(`/review/product/${id}/rating-summary`),
         ]);
+
         setReviews(reviewsRes.data);
-        setRatingSummary(summaryRes.data);
+        setRatingSummary({
+          average_rating: summaryRes.data.average_rating ?? 0,
+          review_count: summaryRes.data.review_count ?? 0,
+        });
       } catch {
-        // silent fail
+        setRatingSummary({ average_rating: 0, review_count: 0 });
       } finally {
         setReviewsLoading(false);
       }
     };
+
     fetchReviews();
   }, [product, id, token]);
 
   const handleQuantityChange = useCallback((delta: number) => {
     if (!product) return;
-    setQuantity(prev => Math.max(1, Math.min(product.stock, prev + delta)));
+    setQuantity((prev) => Math.max(1, Math.min(product.stock || 0, prev + delta)));
   }, [product]);
 
   const handleImageSelect = useCallback((image: string) => {
@@ -118,9 +124,18 @@ const ProductDetails = () => {
   }, [product, quantity, addToCart, navigate]);
 
   const handleSubmitReview = useCallback(async () => {
-    if (!token) { toast.error("Please log in to submit a review."); return; }
-    if (userRating === 0) { toast.error("Please select a rating."); return; }
-    if (!userComment.trim()) { toast.error("Please write a comment."); return; }
+    if (!token) {
+      toast.error("Please log in to submit a review.");
+      return;
+    }
+    if (userRating === 0) {
+      toast.error("Please select a rating.");
+      return;
+    }
+    if (!userComment.trim()) {
+      toast.error("Please write a comment.");
+      return;
+    }
 
     setSubmittingReview(true);
     try {
@@ -135,8 +150,12 @@ const ProductDetails = () => {
         api.get(`/review/product/${id}/reviews`),
         api.get(`/review/product/${id}/rating-summary`),
       ]);
+
       setReviews(reviewsRes.data);
-      setRatingSummary(summaryRes.data);
+      setRatingSummary({
+        average_rating: summaryRes.data.average_rating ?? 0,
+        review_count: summaryRes.data.review_count ?? 0,
+      });
 
       setUserRating(0);
       setUserComment("");
@@ -147,6 +166,9 @@ const ProductDetails = () => {
       setSubmittingReview(false);
     }
   }, [token, userRating, userComment, id]);
+
+  // Safe average rating to prevent .toFixed error
+  const safeAverage = ratingSummary.average_rating ?? 0;
 
   if (isLoading) {
     return (
@@ -231,7 +253,7 @@ const ProductDetails = () => {
               )}
             </div>
 
-            {/* Info */}
+            {/* Product Info */}
             <div className="lg:col-span-2 space-y-8 order-1 lg:order-2">
               <div>
                 <h1 className="text-3xl lg:text-4xl font-light text-gray-900 leading-tight mb-3">
@@ -242,7 +264,7 @@ const ProductDetails = () => {
                 </p>
               </div>
 
-              {/* Rating */}
+              {/* Rating Section - SAFE VERSION */}
               <div className="flex items-center gap-5">
                 <div className="relative w-20 h-20">
                   <svg className="w-full h-full" viewBox="0 0 100 100">
@@ -259,7 +281,7 @@ const ProductDetails = () => {
                       className="text-teal-500"
                       strokeWidth="8"
                       strokeDasharray={264}
-                      strokeDashoffset={264 - (264 * ratingSummary.average_rating) / 5}
+                      strokeDashoffset={264 - (264 * safeAverage) / 5}
                       strokeLinecap="round"
                       fill="transparent"
                       r="42"
@@ -268,14 +290,17 @@ const ProductDetails = () => {
                     />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center text-2xl font-medium text-teal-600">
-                    {ratingSummary.average_rating.toFixed(1)}
+                    {safeAverage.toFixed(1)}
                   </div>
                 </div>
 
                 <div>
                   <div className="flex text-2xl">
-                    {[1,2,3,4,5].map(s => (
-                      <FaStar key={s} className={s <= Math.round(ratingSummary.average_rating) ? "text-amber-500" : "text-gray-200"} />
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <FaStar
+                        key={s}
+                        className={s <= Math.round(safeAverage) ? "text-amber-500" : "text-gray-200"}
+                      />
                     ))}
                   </div>
                   <p className="text-sm text-gray-500 mt-1">
@@ -295,7 +320,7 @@ const ProductDetails = () => {
                 <span className="text-gray-500">Ships in 1–3 business days</span>
               </div>
 
-              {/* Quantity & Add to Cart */}
+              {/* Quantity Selector & Add to Cart */}
               <div className="flex items-center gap-6">
                 <div className="flex border border-gray-200 rounded-full overflow-hidden">
                   <button
@@ -308,7 +333,7 @@ const ProductDetails = () => {
                   <span className="w-16 text-center text-xl font-medium py-3">{quantity}</span>
                   <button
                     onClick={() => handleQuantityChange(1)}
-                    disabled={quantity >= product.stock || product.stock === 0}
+                    disabled={quantity >= (product.stock || 0) || product.stock === 0}
                     className="w-12 h-12 text-xl hover:bg-gray-50 active:bg-gray-100 disabled:opacity-40 transition"
                   >
                     +
@@ -327,7 +352,7 @@ const ProductDetails = () => {
             </div>
           </div>
 
-          {/* ── NEW REVIEWS SECTION ── Clever left/right layout ── */}
+          {/* Reviews Section - Left/Right Layout */}
           <section className="mt-24 lg:mt-32 pt-16 lg:pt-24 bg-gray-300 mb-4">
             <div className="max-w-7xl mx-auto px-5 lg:px-12">
               <h2 className="text-3xl lg:text-4xl font-light text-gray-900 text-center mb-16 tracking-tight">
@@ -337,22 +362,12 @@ const ProductDetails = () => {
               <div className="grid lg:grid-cols-2 gap-12 lg:gap-20">
                 {/* LEFT: Rating + Submit Form */}
                 <div className="space-y-12 mb-2">
-                  {/* Average Rating – Elegant gold-ring badge */}
                   <div className="flex justify-center">
                     <div className="relative w-44 h-44">
-                      {/* Outer gold ring */}
                       <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
-                        <circle
-                          cx="50"
-                          cy="50"
-                          r="48"
-                          fill="none"
-                          stroke="#d4af37"
-                          strokeWidth="5"
-                        />
+                        <circle cx="50" cy="50" r="48" fill="none" stroke="#d4af37" strokeWidth="5" />
                       </svg>
 
-                      {/* Teal progress */}
                       <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
                         <defs>
                           <linearGradient id="ratingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -368,23 +383,14 @@ const ProductDetails = () => {
                           stroke="url(#ratingGrad)"
                           strokeWidth="10"
                           strokeDasharray={283}
-                          strokeDashoffset={283}
+                          strokeDashoffset={283 - (283 * safeAverage) / 5}
                           strokeLinecap="round"
-                        >
-                          <animate
-                            attributeName="strokeDashoffset"
-                            from="283"
-                            to={283 - (283 * ratingSummary.average_rating) / 5}
-                            dur="1.8s"
-                            fill="freeze"
-                          />
-                        </circle>
+                        />
                       </svg>
 
-                      {/* Center */}
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
                         <span className="text-5xl font-light text-teal-700">
-                          {ratingSummary.average_rating.toFixed(1)}
+                          {safeAverage.toFixed(1)}
                         </span>
                         <span className="text-sm text-teal-600 mt-1 font-medium">
                           {ratingSummary.review_count} reviews
@@ -406,11 +412,10 @@ const ProductDetails = () => {
                       </h3>
 
                       <div className="space-y-8">
-                        {/* Stars */}
                         <div className="text-center">
                           <p className="text-base text-gray-600 mb-5">Rate this product</p>
                           <div className="flex justify-center gap-3">
-                            {[1,2,3,4,5].map(s => (
+                            {[1, 2, 3, 4, 5].map((s) => (
                               <motion.button
                                 key={s}
                                 whileHover={{ scale: 1.2 }}
@@ -426,16 +431,14 @@ const ProductDetails = () => {
                           </div>
                         </div>
 
-                        {/* Textarea */}
                         <textarea
                           rows={5}
                           value={userComment}
-                          onChange={e => setUserComment(e.target.value)}
+                          onChange={(e) => setUserComment(e.target.value)}
                           placeholder="What did you think? We value your honest feedback."
                           className="w-full border border-teal-200 rounded-xl p-5 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 outline-none resize-none text-gray-800 placeholder-gray-400"
                         />
 
-                        {/* Submit */}
                         <button
                           onClick={handleSubmitReview}
                           disabled={submittingReview || userRating === 0}
@@ -476,7 +479,6 @@ const ProductDetails = () => {
                         className="bg-white rounded-2xl shadow-md border border-teal-50/70 p-6 lg:p-8 hover:shadow-xl hover:border-teal-200 transition-all duration-300"
                       >
                         <div className="flex items-start gap-4">
-                          {/* Avatar */}
                           <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-sm">
                             {r.user.firstname[0]}
                             {r.user.lastname[0]}
@@ -497,7 +499,7 @@ const ProductDetails = () => {
                             </div>
 
                             <div className="flex gap-1 mb-4">
-                              {[1,2,3,4,5].map(s => (
+                              {[1, 2, 3, 4, 5].map((s) => (
                                 <FaStar
                                   key={s}
                                   className={`text-xl drop-shadow-sm ${
@@ -507,9 +509,7 @@ const ProductDetails = () => {
                               ))}
                             </div>
 
-                            <p className="text-gray-700 leading-relaxed">
-                              {r.comment}
-                            </p>
+                            <p className="text-gray-700 leading-relaxed">{r.comment}</p>
                           </div>
                         </div>
                       </motion.div>
@@ -524,9 +524,19 @@ const ProductDetails = () => {
         {/* Floating Action Bar */}
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-xl shadow-2xl border border-gray-200 rounded-3xl px-6 py-4 flex items-center gap-6 z-50">
           <div className="flex items-center gap-3">
-            <button onClick={() => handleQuantityChange(-1)} className="w-10 h-10 rounded-full border flex items-center justify-center text-xl hover:bg-gray-100 active:bg-gray-200 transition">-</button>
+            <button
+              onClick={() => handleQuantityChange(-1)}
+              className="w-10 h-10 rounded-full border flex items-center justify-center text-xl hover:bg-gray-100 active:bg-gray-200 transition"
+            >
+              −
+            </button>
             <span className="font-semibold text-xl w-8 text-center">{quantity}</span>
-            <button onClick={() => handleQuantityChange(1)} className="w-10 h-10 rounded-full border flex items-center justify-center text-xl hover:bg-gray-100 active:bg-gray-200 transition">+</button>
+            <button
+              onClick={() => handleQuantityChange(1)}
+              className="w-10 h-10 rounded-full border flex items-center justify-center text-xl hover:bg-gray-100 active:bg-gray-200 transition"
+            >
+              +
+            </button>
           </div>
 
           <motion.button
