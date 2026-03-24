@@ -16,7 +16,11 @@ wishlist_bp = Blueprint('wishlist', __name__, url_prefix='/wishlist')
 # ────────────────────────────────────────────────
 @wishlist_bp.route('/add', methods=['POST'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def add_to_wishlist():
     """Add a product to the authenticated user's wishlist."""
     user_id = get_jwt_identity()
@@ -60,7 +64,11 @@ def add_to_wishlist():
 # ────────────────────────────────────────────────
 @wishlist_bp.route('/remove/<int:product_id>', methods=['DELETE'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def remove_from_wishlist(product_id):
     """Remove a specific product from the authenticated user's wishlist."""
     user_id = get_jwt_identity()
@@ -89,7 +97,11 @@ def remove_from_wishlist(product_id):
 # ────────────────────────────────────────────────
 @wishlist_bp.route('/clear', methods=['DELETE'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def clear_wishlist():
     """Remove ALL items from the authenticated user's wishlist."""
     user_id = get_jwt_identity()
@@ -117,7 +129,11 @@ def clear_wishlist():
 # ────────────────────────────────────────────────
 @wishlist_bp.route('/my-wishlist', methods=['GET'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def get_my_wishlist():
     """Return the authenticated user's wishlist items with product details."""
     user_id = get_jwt_identity()
@@ -160,7 +176,11 @@ def get_my_wishlist():
 # ────────────────────────────────────────────────
 @wishlist_bp.route('/all', methods=['GET'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def get_all_wishlists():
     """Admin-only: Get aggregated wishlist data for all users."""
     user_id = get_jwt_identity()

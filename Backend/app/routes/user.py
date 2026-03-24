@@ -9,7 +9,11 @@ user_bp = Blueprint('user', __name__)
 
 @user_bp.route('/profile', methods=['GET'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def get_profile():
     current_user_id = get_jwt_identity()
     user = db.session.get(User, current_user_id)
@@ -27,7 +31,11 @@ def get_profile():
 
 @user_bp.route('/profile', methods=['PUT'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def update_profile():
     current_user_id = get_jwt_identity()
     user = db.session.get(User, current_user_id)
@@ -96,7 +104,11 @@ def update_profile():
 
 @user_bp.route('/all', methods=['GET'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def get_all_users():
     current_user_id = get_jwt_identity()
     admin = db.session.get(User, current_user_id)
@@ -120,7 +132,11 @@ def get_all_users():
 
 @user_bp.route('/<int:id>', methods=['GET'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def get_user(id):
     current_user_id = get_jwt_identity()
     admin = db.session.get(User, current_user_id)
@@ -144,7 +160,11 @@ def get_user(id):
 
 @user_bp.route('/<int:id>', methods=['PUT'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def update_user_role(id):
     current_user_id = get_jwt_identity()
     admin = db.session.get(User, current_user_id)
@@ -186,7 +206,11 @@ def update_user_role(id):
 
 @user_bp.route('/<int:id>', methods=['DELETE'])
 @jwt_required()
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def delete_user(id):
     current_user_id = get_jwt_identity()
     admin = db.session.get(User, current_user_id)
