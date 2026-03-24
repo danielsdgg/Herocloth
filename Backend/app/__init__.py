@@ -1,4 +1,4 @@
-# app/utils/__init__.py
+# app/__init__.py
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -13,18 +13,27 @@ load_dotenv()
 db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
-mail = Mail()  # ← Flask-Mail
+mail = Mail()
 
 def create_app():
     app = Flask(__name__)
 
     # =======================
-    # CONFIG
+    # DATABASE CONFIG - FIXED FOR RENDER
     # =======================
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
+    database_url = os.environ.get('DATABASE_URL')
+
+    if not database_url:
+        raise RuntimeError("DATABASE_URL environment variable is not set!")
+
+    # Fix Render's 'postgres://' → 'postgresql://'
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
-    app.config['JWT_SECRET_KEY'] = os.environ['SECRET_KEY']
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+    app.config['JWT_SECRET_KEY'] = os.environ.get('SECRET_KEY')
 
     # Flask-Mail config
     app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -35,16 +44,14 @@ def create_app():
     app.config['MAIL_DEFAULT_SENDER'] = 'danieldeploys@gmail.com'
 
     # =======================
-    # CORS FIX 
+    # CORS
     # =======================
     CORS(app, resources={
         r"/*": {
             "origins": [
-                "http://localhost:3000",
-                "http://127.0.0.1:3000",
                 "https://herocloth.vercel.app",
-                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
-                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"
+                "http://localhost:5173",
+                "http://127.0.0.1:5173",
             ],
             "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization"],
@@ -61,32 +68,17 @@ def create_app():
     mail.init_app(app)
 
     # =======================
-    # ✅ FIXED PREFLIGHT HANDLER
-    # =======================
-    @app.before_request
-    def handle_options():
-        if request.method == "OPTIONS":
-            origin = request.headers.get("Origin")
-
-            response = jsonify({"msg": "CORS preflight successful"})
-            response.headers.add("Access-Control-Allow-Origin", origin if origin else "*")
-            response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
-            response.headers.add("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-            response.headers.add("Access-Control-Allow-Credentials", "true")
-            return response, 200
-
-    # =======================
-    # APP CONTEXT
+    # Blueprints + Models
     # =======================
     with app.app_context():
-        # Models
+        # Import models
         from app.models.user import User
         from app.models.product import Product
         from app.models.cart import Cart
         from app.models.review import Review
         from app.models.contact import Contact
 
-        # Routes
+        # Import blueprints
         from app.routes.auth import auth_bp
         from app.routes.cart import cart_bp
         from app.routes.product import product_bp
@@ -108,7 +100,7 @@ def create_app():
         app.register_blueprint(wishlist_bp, url_prefix='/wishlist')
         app.register_blueprint(contact_bp)
 
-        db.create_all()
-        print("Registered blueprints:", [rule.endpoint for rule in app.url_map.iter_rules()])
+        # REMOVE db.create_all() - Use migrations instead
+        print("App initialized with PostgreSQL")
 
     return app
