@@ -72,7 +72,11 @@ def register():
         return jsonify({"msg": "Internal server error"}), 500
 
 @auth_bp.route('/login', methods=['POST'])
-@cross_origin(origins=["http://localhost:3000"], supports_credentials=True)
+@cross_origin(origins=["http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "https://herocloth.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app",
+                "https://herocloth-jza4vn2ab-danielsdggs-projects.vercel.app"], supports_credentials=True)
 def login():
     data = request.get_json()
     email = data.get('email')
