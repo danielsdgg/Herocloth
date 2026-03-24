@@ -24,9 +24,8 @@ def create_app():
     database_url = os.environ.get('DATABASE_URL')
 
     if not database_url:
-        raise RuntimeError("DATABASE_URL environment variable is not set!")
+        raise RuntimeError("DATABASE_URL environment variable is not set! Check Render Environment Variables.")
 
-    # Fix Render's 'postgres://' → 'postgresql://'
     if database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql://", 1)
 
@@ -49,9 +48,11 @@ def create_app():
     CORS(app, resources={
         r"/*": {
             "origins": [
+                "http://localhost:3000",           # Vite dev server
+                "http://127.0.0.1:3000",
                 "https://herocloth.vercel.app",
-                "http://localhost:5173",
-                "http://127.0.0.1:5173",
+                "https://herocloth-git-main-danielsdggs-projects.vercel.app",
+                "https://herocloth-git-deploy-danielsdggs-projects.vercel.app"
             ],
             "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization"],
@@ -68,7 +69,7 @@ def create_app():
     mail.init_app(app)
 
     # =======================
-    # Blueprints + Models
+    # Blueprints & Models
     # =======================
     with app.app_context():
         # Import models
@@ -78,7 +79,7 @@ def create_app():
         from app.models.review import Review
         from app.models.contact import Contact
 
-        # Import blueprints
+        # Import routes
         from app.routes.auth import auth_bp
         from app.routes.cart import cart_bp
         from app.routes.product import product_bp
@@ -100,7 +101,8 @@ def create_app():
         app.register_blueprint(wishlist_bp, url_prefix='/wishlist')
         app.register_blueprint(contact_bp)
 
-        # REMOVE db.create_all() - Use migrations instead
-        print("App initialized with PostgreSQL")
+        # DO NOT use db.create_all() in production with migrations
+        print("✅ App initialized successfully with PostgreSQL")
+        print("Registered blueprints:", [rule.endpoint for rule in app.url_map.iter_rules()])
 
     return app
