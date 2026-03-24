@@ -9,4 +9,4 @@ gunicorn==21.2.0
 setuptools<81
 flask-mail
 requests==2.32.3
-# psycopg2-binary==2.9.6   # Not needed for SQLite dev
+psycopg2-binary==2.9.10   # Not needed for SQLite development, only for PostgreSQL in production
