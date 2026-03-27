@@ -167,8 +167,10 @@ const ProductDetails = () => {
     }
   }, [token, userRating, userComment, id]);
 
-  // Safe average rating to prevent .toFixed error
-  const safeAverage = ratingSummary.average_rating ?? 0;
+  // FIXED: Properly ensure safeAverage is always a number
+  const safeAverage = typeof ratingSummary.average_rating === 'number' 
+    ? ratingSummary.average_rating 
+    : 0;
 
   if (isLoading) {
     return (
@@ -264,7 +266,7 @@ const ProductDetails = () => {
                 </p>
               </div>
 
-              {/* Rating Section - SAFE VERSION */}
+              {/* Rating Section */}
               <div className="flex items-center gap-5">
                 <div className="relative w-20 h-20">
                   <svg className="w-full h-full" viewBox="0 0 100 100">
@@ -352,7 +354,7 @@ const ProductDetails = () => {
             </div>
           </div>
 
-          {/* Reviews Section - Left/Right Layout */}
+          {/* Reviews Section */}
           <section className="mt-24 lg:mt-32 pt-16 lg:pt-24 bg-gray-300 mb-4">
             <div className="max-w-7xl mx-auto px-5 lg:px-12">
               <h2 className="text-3xl lg:text-4xl font-light text-gray-900 text-center mb-16 tracking-tight">
