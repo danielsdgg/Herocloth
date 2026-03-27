@@ -20,7 +20,7 @@ const AppContent = () => {
   const location = useLocation();
 
   // pages where FloatingCartButton should be hidden
-  const hideCartButtonRoutes = ["/login", "/register"];
+  const hideCartButtonRoutes = ["/login", "/register", "/cart"];
 
   const shouldShowCartButton = !hideCartButtonRoutes.includes(location.pathname);
 

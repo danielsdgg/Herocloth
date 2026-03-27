@@ -255,13 +255,12 @@ const ClientDashboard: React.FC = () => {
                         <div className="space-y-4">
                           {orders.slice(0, 3).map((order) => (
                             <div
-                              key={order.id}
                               className="flex justify-between items-center py-4 border-b border-gray-100 last:border-0"
                             >
                               <div>
-                                <p className="font-medium text-gray-900">
+                                {/* <p className="font-medium text-gray-900">
                                   Order #{order.id}
-                                </p>
+                                </p> */}
                                 <p className="text-sm text-gray-500">
                                   {new Date(order.created_at).toLocaleDateString()}
                                 </p>
@@ -297,7 +296,7 @@ const ClientDashboard: React.FC = () => {
                           <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                               <tr>
-                                <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Order ID</th>
+                                {/* <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Order ID</th> */}
                                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Date</th>
                                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Items</th>
                                 <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Total</th>
@@ -307,7 +306,7 @@ const ClientDashboard: React.FC = () => {
                             <tbody className="divide-y divide-gray-200">
                               {orders.map((order) => (
                                 <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                                  <td className="px-6 py-5 text-sm text-gray-900">#{order.id}</td>
+                                  {/* <td className="px-6 py-5 text-sm text-gray-900">#{order.id}</td> */}
                                   <td className="px-6 py-5 text-sm text-gray-600">
                                     {new Date(order.created_at).toLocaleDateString()}
                                   </td>

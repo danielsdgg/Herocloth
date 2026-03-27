@@ -89,7 +89,7 @@ const AdminDashboard = () => {
   >("users");
 
   // ─────────────────────────────────────────────────────────────────────────────
-  //  Data fetching (unchanged logic)
+  //  Data fetching (unchanged)
   // ─────────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -163,9 +163,10 @@ const AdminDashboard = () => {
       try {
         const api = createApiInstance(token);
         const res = await api.get<WishlistGroup[]>("/wishlist/all", { withCredentials: true });
-        setWishlists(res.data);
+        setWishlists(res.data || []);        // ← Safe fallback
       } catch {
         toast.error("Failed to load wishlists");
+        setWishlists([]);                    // ← Safe fallback on error
       } finally {
         setIsLoading(false);
       }
@@ -368,8 +369,6 @@ const AdminDashboard = () => {
     { id: "contacts", label: "Contacts", icon: Mail, accent: "indigo" },
     { id: "orders", label: "Orders", icon: ShoppingCart, accent: "rose" },
   ] as const;
-
-  // type TabId = typeof tabs[number]["id"];
 
   const getAccent = (accent: string) => ({
     bg: `bg-${accent}-50`,
@@ -757,11 +756,11 @@ const AdminDashboard = () => {
                     All Wishlists
                   </h2>
                   <div className="text-gray-600">
-                    Users with items: <span className="text-gray-900 font-medium">{wishlists.length}</span>
+                    Users with items: <span className="text-gray-900 font-medium">{Array.isArray(wishlists) ? wishlists.length : 0}</span>
                   </div>
                 </div>
 
-                {wishlists.length === 0 ? (
+                {!Array.isArray(wishlists) || wishlists.length === 0 ? (
                   <div className="text-center py-32 text-gray-600">
                     No wishlists created yet.
                   </div>
@@ -776,12 +775,12 @@ const AdminDashboard = () => {
                           <UserCircle size={22} className="text-pink-500" />
                           {group.user_name}
                           <span className="text-gray-500 text-base ml-2">
-                            ({group.items.length} items)
+                            ({group.items?.length || 0} items)
                           </span>
                         </h3>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                          {group.items.map(item => (
+                          {(group.items || []).map(item => (
                             <div
                               key={item.product_id}
                               className="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden hover:border-pink-200 transition-colors"
